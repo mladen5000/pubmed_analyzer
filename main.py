@@ -16,6 +16,7 @@ from collections import defaultdict, Counter
 from typing import List, Dict, Any, Optional, Tuple
 import logging
 from statistics import mode, StatisticsError
+import argparse
 
 # Core libraries
 import requests
@@ -1319,22 +1320,75 @@ Please provide a comprehensive answer based on the context, citing the sources w
         logger.info("Visualizations saved: enhanced_analysis_dashboard.png")
 
 
+def parse_arguments():
+    """Parse command line arguments"""
+    parser = argparse.ArgumentParser(
+        description="Enhanced Scientific Literature Analysis Pipeline",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  python main.py --query "machine learning AND medical diagnosis" --max-papers 100
+  python main.py -q "COVID-19 vaccine efficacy" -m 50 --start-date 2020/01/01 --end-date 2023/12/31
+  python main.py --query "CRISPR gene editing" --max-papers 75 --start-date 2022/01/01
+        """
+    )
+
+    parser.add_argument(
+        "-q", "--query",
+        type=str,
+        required=True,
+        help="PubMed search query (e.g., 'machine learning AND medical diagnosis')"
+    )
+
+    parser.add_argument(
+        "-m", "--max-papers",
+        type=int,
+        default=50,
+        help="Maximum number of papers to analyze (default: 50)"
+    )
+
+    parser.add_argument(
+        "--start-date",
+        type=str,
+        default="2020/01/01",
+        help="Start date for search in YYYY/MM/DD format (default: 2020/01/01)"
+    )
+
+    parser.add_argument(
+        "--end-date",
+        type=str,
+        default="2024/12/31",
+        help="End date for search in YYYY/MM/DD format (default: 2024/12/31)"
+    )
+
+    parser.add_argument(
+        "--email",
+        type=str,
+        help="Email address for NCBI API (overrides default in code)"
+    )
+
+    return parser.parse_args()
+
+
 def main():
-    """Main execution function with example usage"""
+    """Main execution function with command line argument support"""
+
+    # Parse command line arguments
+    args = parse_arguments()
 
     # Configuration
-    EMAIL = "your.email@example.com"  # Replace with your email
-    NCBI_API_KEY = None  # Optional: Get from NCBI for higher rate limits
+    EMAIL = args.email if args.email else "mrasic2@uic.edu"  # Use provided email or default
+    NCBI_API_KEY = os.getenv("NCBI_API_KEY")  # For NCBI API
     OPENAI_KEY = os.getenv("OPENAI_API_KEY")  # For GPT models
     DEEPSEEK_KEY = os.getenv(
         "DEEPSEEK_API_KEY"
     )  # For DeepSeek (very cheap alternative)
 
-    # Search parameters
-    SEARCH_QUERY = "machine learning AND medical diagnosis"
-    MAX_PAPERS = 50
-    START_DATE = "2020/01/01"
-    END_DATE = "2024/12/31"
+    # Search parameters from command line
+    SEARCH_QUERY = args.query
+    MAX_PAPERS = args.max_papers
+    START_DATE = args.start_date
+    END_DATE = args.end_date
 
     # Initialize enhanced analyzer
     analyzer = EnhancedPubMedAnalyzer(

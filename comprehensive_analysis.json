@@ -1,0 +1,1581 @@
+{
+  "statistics": {
+    "total_papers": 50,
+    "papers_with_fulltext": 0,
+    "papers_by_year": {
+      "2025": 19,
+      "2024": 30,
+      "2023": 1
+    },
+    "top_journals": [
+      [
+        "AMIA ... Annual Symposium proceedings. AMIA Symposium",
+        9
+      ],
+      [
+        "Ophthalmology science",
+        3
+      ],
+      [
+        "Annual International Conference of the IEEE Engineering in Medicine and Biology Society. IEEE Engineering in Medicine and Biology Society. Annual International Conference",
+        3
+      ],
+      [
+        "JAACAP open",
+        2
+      ],
+      [
+        "Journal of pharmaceutical analysis",
+        2
+      ],
+      [
+        "Neuroscience applied",
+        2
+      ],
+      [
+        "Npj imaging",
+        2
+      ],
+      [
+        "Fa yi xue za zhi",
+        2
+      ],
+      [
+        "Sheng wu yi xue gong cheng xue za zhi = Journal of biomedical engineering = Shengwu yixue gongchengxue zazhi",
+        2
+      ],
+      [
+        "International journal of data science and analytics",
+        1
+      ]
+    ],
+    "top_keywords": [
+      [
+        "Machine learning",
+        14
+      ],
+      [
+        "deep learning",
+        4
+      ],
+      [
+        "artificial intelligence",
+        4
+      ],
+      [
+        "machine learning",
+        4
+      ],
+      [
+        "Deep learning",
+        4
+      ],
+      [
+        "Electronic health records",
+        3
+      ],
+      [
+        "Artificial intelligence",
+        3
+      ],
+      [
+        "electronic health records",
+        2
+      ],
+      [
+        "Precision medicine",
+        2
+      ],
+      [
+        "medical imaging",
+        2
+      ],
+      [
+        "Radiomics",
+        2
+      ],
+      [
+        "Glaucoma screening",
+        2
+      ],
+      [
+        "AI",
+        2
+      ],
+      [
+        "Asymptomatic carotid stenosis",
+        1
+      ],
+      [
+        "Disease prediction",
+        1
+      ],
+      [
+        "Graph clustering",
+        1
+      ],
+      [
+        "Stroke",
+        1
+      ],
+      [
+        "adolescent",
+        1
+      ],
+      [
+        "child",
+        1
+      ],
+      [
+        "emergencies",
+        1
+      ]
+    ]
+  },
+  "topics": {
+    "topics": [
+      {
+        "id": 0,
+        "words": [
+          "adhd",
+          "label",
+          "pathology",
+          "pathsam",
+          "classification",
+          "method",
+          "label noise",
+          "window",
+          "stone",
+          "kidney stone",
+          "image",
+          "kidney",
+          "sam",
+          "mci",
+          "noise"
+        ],
+        "weights": [
+          0.9162902453230136,
+          0.76152047444331,
+          0.6756500430583747,
+          0.6256413188644748,
+          0.6071603560245176,
+          0.5809323983781437,
+          0.5428907543803511,
+          0.5407289377033806,
+          0.5377727345064048,
+          0.5377727345064048,
+          0.5093947375231797,
+          0.4954979756776223,
+          0.4942309872445686,
+          0.49209915694292217,
+          0.4697987678717044
+        ]
+      },
+      {
+        "id": 1,
+        "words": [
+          "mci",
+          "bone",
+          "mri",
+          "maximum width",
+          "width",
+          "epiphysis",
+          "progression",
+          "wrist",
+          "maximum",
+          "classification",
+          "age",
+          "selected",
+          "bone age",
+          "mri image",
+          "development"
+        ],
+        "weights": [
+          0.48062584705796074,
+          0.48053189895105586,
+          0.3814009636952156,
+          0.3536879296454457,
+          0.3536879296454457,
+          0.3536879296454457,
+          0.34886036067340304,
+          0.3291903457376774,
+          0.3118264896763374,
+          0.2973980862430382,
+          0.2955687052902348,
+          0.29026594342750867,
+          0.29026594342750867,
+          0.29026594342750867,
+          0.28955221581468227
+        ]
+      },
+      {
+        "id": 2,
+        "words": [
+          "imaging",
+          "ckd",
+          "ultrasound",
+          "processing",
+          "set",
+          "mpba",
+          "bacterial",
+          "bacteria",
+          "researcher",
+          "infection",
+          "kidney",
+          "datasets",
+          "public",
+          "physician",
+          "test set"
+        ],
+        "weights": [
+          0.6261780710766874,
+          0.5971409293196567,
+          0.5843281481526256,
+          0.5331434352093611,
+          0.5064714287382671,
+          0.4879173125799382,
+          0.45047599538258953,
+          0.45047599538258953,
+          0.4191899664270039,
+          0.4032912701821286,
+          0.3994205344595676,
+          0.390564521309432,
+          0.3852570425221359,
+          0.38457792802943647,
+          0.38457471144569244
+        ]
+      },
+      {
+        "id": 3,
+        "words": [
+          "tcm",
+          "nipt",
+          "artificial intelligence",
+          "artificial",
+          "intelligence",
+          "pathology",
+          "brain interaction",
+          "genome",
+          "cfdna",
+          "inequity",
+          "interaction",
+          "mutation",
+          "digital pathology",
+          "traditional",
+          "llm"
+        ],
+        "weights": [
+          0.9116346258751957,
+          0.5346484852598368,
+          0.5229177635935237,
+          0.5229177635935012,
+          0.5229177635934755,
+          0.48713532850622854,
+          0.45461208956850485,
+          0.4477187867243413,
+          0.4477187867243413,
+          0.42319237767967155,
+          0.42038088533996687,
+          0.414143524344761,
+          0.39821130037654984,
+          0.39805791702990234,
+          0.39607972917242706
+        ]
+      },
+      {
+        "id": 4,
+        "words": [
+          "sleep",
+          "formation",
+          "plaque",
+          "knowledge",
+          "hcc",
+          "plaque formation",
+          "gene",
+          "nafld",
+          "nafld hcc",
+          "cancer",
+          "advance",
+          "biomedical knowledge",
+          "biomedical",
+          "osa",
+          "specialized"
+        ],
+        "weights": [
+          0.7366965191767696,
+          0.5555268289254566,
+          0.5555268289254566,
+          0.5449348810950171,
+          0.5329513541010504,
+          0.5141112061165434,
+          0.49767190469313105,
+          0.48965581198075925,
+          0.4463601955992713,
+          0.43273885861696215,
+          0.3871125770990763,
+          0.38452090964356234,
+          0.38452090964356234,
+          0.36426266576340194,
+          0.35564877498616265
+        ]
+      },
+      {
+        "id": 5,
+        "words": [
+          "ssri",
+          "bci",
+          "resistant",
+          "worked",
+          "joint",
+          "angle",
+          "joint angle",
+          "antibiotic",
+          "set",
+          "human",
+          "infection",
+          "hematoma",
+          "resistant infection",
+          "antibiotic resistant",
+          "model"
+        ],
+        "weights": [
+          0.6239872360811293,
+          0.5905940365624328,
+          0.4493248212226397,
+          0.44156535504218486,
+          0.42756294179097076,
+          0.42756294179097076,
+          0.42756294179097076,
+          0.4155846031974535,
+          0.3964506538455871,
+          0.3880789385522161,
+          0.37311233681822586,
+          0.36759674341199966,
+          0.3619936125090454,
+          0.3619936125090454,
+          0.357456154481141
+        ]
+      },
+      {
+        "id": 6,
+        "words": [
+          "child",
+          "antibiotic",
+          "pixel",
+          "resistance",
+          "detention",
+          "background",
+          "background pixel",
+          "disease",
+          "labcare",
+          "diagnosis",
+          "semantic",
+          "accuracy",
+          "information",
+          "cutout",
+          "record"
+        ],
+        "weights": [
+          0.7230235059859251,
+          0.7170337154844264,
+          0.5559328720397748,
+          0.5407558632109536,
+          0.4893896884520723,
+          0.4784860743889131,
+          0.4784860743889131,
+          0.45985316948946,
+          0.43930691981047654,
+          0.4233934161450875,
+          0.4065534002197191,
+          0.38658269137447454,
+          0.3845313948785535,
+          0.3523240455126794,
+          0.34839924858496746
+        ]
+      },
+      {
+        "id": 7,
+        "words": [
+          "model",
+          "feature",
+          "glaucoma",
+          "patient",
+          "clinical",
+          "network",
+          "data",
+          "ehr",
+          "auroc",
+          "learning model",
+          "clinical feature",
+          "xfg",
+          "identify",
+          "shap",
+          "study"
+        ],
+        "weights": [
+          1.3271055172336053,
+          1.227141219557248,
+          1.0171829158273995,
+          0.7898926716321918,
+          0.736924952799758,
+          0.7007223862722591,
+          0.6752035101814321,
+          0.6484277232558666,
+          0.6375000249477523,
+          0.6233679252197531,
+          0.6203969301791786,
+          0.6067047613461551,
+          0.5810558114007385,
+          0.5699965045779367,
+          0.5658238455087056
+        ]
+      },
+      {
+        "id": 8,
+        "words": [
+          "sample",
+          "hypertension",
+          "influence",
+          "signal",
+          "model",
+          "syn",
+          "image",
+          "area",
+          "b0",
+          "efficientnet b0",
+          "influence function",
+          "similarity",
+          "method",
+          "efficientnet",
+          "since"
+        ],
+        "weights": [
+          0.8026905939766875,
+          0.6190534192933113,
+          0.5871994500298026,
+          0.5204102752759624,
+          0.4893927638079787,
+          0.47752539383350756,
+          0.4703226989739151,
+          0.46207841166578534,
+          0.46121298362376506,
+          0.46121298362376506,
+          0.4594694458446881,
+          0.4594694458446881,
+          0.42790572260387605,
+          0.42635149310960185,
+          0.42426083022860006
+        ]
+      },
+      {
+        "id": 9,
+        "words": [
+          "lurasidone",
+          "cancer",
+          "classifier",
+          "microbiome",
+          "multi",
+          "perturbed",
+          "gut",
+          "patient",
+          "individual",
+          "classifier trained",
+          "data",
+          "treatment",
+          "psychiatric",
+          "repository",
+          "used"
+        ],
+        "weights": [
+          0.8197410011709082,
+          0.6904507184164174,
+          0.6028012884763141,
+          0.5358453491005751,
+          0.5258837132418588,
+          0.5014016994587556,
+          0.49377487080844285,
+          0.4672601961094649,
+          0.45701118214209446,
+          0.43450141453811575,
+          0.43394458959108295,
+          0.43292534567370555,
+          0.3963899018159823,
+          0.39638297694243463,
+          0.36709853924832725
+        ]
+      }
+    ],
+    "doc_topic_assignments": {
+      "40980489": "7",
+      "40922766": "6",
+      "40893871": "4",
+      "40823261": "3",
+      "40656101": "0",
+      "40654593": "9",
+      "40604228": "8",
+      "40604097": "2",
+      "40535105": "9",
+      "40433415": "4",
+      "40417584": "6",
+      "40417572": "5",
+      "40417558": "3",
+      "40417544": "6",
+      "40417541": "6",
+      "40417538": "9",
+      "40417514": "0",
+      "40417491": "0",
+      "40417489": "0",
+      "40303946": "9",
+      "40258236": "2",
+      "40248839": "7",
+      "40224254": "8",
+      "40199653": "7",
+      "40161947": "8",
+      "40161462": "7",
+      "40151359": "7",
+      "40144330": "3",
+      "40124313": "7",
+      "40115811": "2",
+      "40109491": "5",
+      "40094037": "0",
+      "40085041": "1",
+      "40061791": "3",
+      "40046733": "1",
+      "40040106": "5",
+      "40039767": "8",
+      "40039337": "0",
+      "40027847": "4",
+      "40017568": "8",
+      "40013022": "9",
+      "40000211": "0",
+      "40000210": "7",
+      "39992333": "5",
+      "39992001": "3",
+      "39990838": "4",
+      "39989910": "2",
+      "39968471": "8"
+    }
+  },
+  "collaboration_stats": {
+    "total_authors": 353,
+    "total_collaborations": 1614,
+    "network_density": 0.02597862477465877
+  },
+  "trends": {
+    "yearly_publications": {
+      "2023": 1,
+      "2024": 30,
+      "2025": 19
+    },
+    "keyword_trends": {
+      "2025": {
+        "Asymptomatic carotid stenosis": 1,
+        "Disease prediction": 1,
+        "Electronic health records": 3,
+        "Graph clustering": 1,
+        "Stroke": 1,
+        "adolescent": 1,
+        "child": 1,
+        "electronic health records": 1,
+        "emergencies": 1,
+        "mental health": 1,
+        "Machine learning": 10,
+        "cancer diagnosis": 1,
+        "deep learning": 1,
+        "healthcare automation": 1,
+        "prognosis": 1,
+        "Drug development": 1,
+        "Precision medicine": 2,
+        "Quality control": 1,
+        "Traditional Chinese medicine": 1,
+        "Data repository": 1,
+        "Multi-site data": 1,
+        "Neuroimaging": 1,
+        "Psychiatry": 1,
+        "Structural MRI": 1,
+        "Transdiagnostic": 1,
+        "CDT1": 1,
+        "Nonalcoholic fatty liver disease": 1,
+        "early diagnosis": 1,
+        "hepatocellular carcinoma": 1,
+        "machine learning": 2,
+        "single-cell sequencing": 1,
+        "Artificial intelligence": 2,
+        "emergency radiology": 1,
+        "musculoskeletal radiology": 1,
+        "paediatric radiology": 1,
+        "Exophagy": 1,
+        "Ferroptosis": 1,
+        "MASH": 1,
+        "MASLD": 1,
+        "Macroautophagy": 1,
+        "Atrial fibrillation": 1,
+        "Complexity analysis": 1,
+        "Electrocardiogram": 1,
+        "Prediction": 1,
+        "Endometrial receptivity": 1,
+        "Frozen embryo transfer": 1,
+        "Radiomics": 1,
+        "SHapley Additive exPlanations": 1,
+        "Ultrasound": 1,
+        "Classification": 1,
+        "Deep neural network": 1,
+        "Giardiasis": 1,
+        "Endotyping analysis": 1,
+        "Exfoliation glaucoma": 1,
+        "Metabolome": 1,
+        "Omics": 1,
+        "Unsupervised machine learning": 1,
+        "Deep learning": 2,
+        "Glaucoma screening": 2,
+        "Broad-spectrum bacteria detection": 1,
+        "Hydrogel microneedle": 1,
+        "SERS": 1,
+        "Skin interstitial fluid": 1,
+        "proactive aggression": 1,
+        "reactive aggression": 1,
+        "retaliation": 1,
+        "Digital pathology": 1,
+        "Oncogenomics": 1,
+        "Alzheimer's disease": 1,
+        "Balancing": 1,
+        "Feature selection": 1,
+        "Shapley value explanation technique": 1,
+        "DJ-1": 1,
+        "LRRK2": 1,
+        "Parkinson\u2019s disease": 1,
+        "Syt11 and \u03b1-synuclein": 1,
+        "artificial intelligence": 1
+      },
+      "2024": {
+        "ADHD": 1,
+        "Action-recognition": 1,
+        "Machine learning": 4,
+        "artificial intelligence": 3,
+        "machine learning": 2,
+        "medical imaging": 1,
+        "robustness": 1,
+        "artificial intelligence (AI)": 1,
+        "gut microbiome": 1,
+        "gut microbiota": 1,
+        "machine learning (ML)": 1,
+        "network-based methods, biomarker discovery": 1,
+        "personalized treatment": 1,
+        "precision medicine": 1,
+        "Artificial Intelligence": 1,
+        "Cardiovascular Equity": 1,
+        "Disparities": 1,
+        "Diversity": 1,
+        "Machine Learning": 1,
+        "Racial and Ethnic Inequity": 1,
+        "adolescents": 1,
+        "age estimation": 1,
+        "epiphysis": 1,
+        "forensic anthropology": 1,
+        "magnetic resonance imaging (MRI)": 1,
+        "stage of skeletal growth": 1,
+        "wrist": 1,
+        "AI": 2,
+        "imaging": 1,
+        "pathology": 1,
+        "Artificial intelligence": 1,
+        "Sleep apnea": 1,
+        "Spain": 1,
+        "bipolar depression": 1,
+        "electronic health records": 1,
+        "lurasidone": 1,
+        "schizophrenia": 1,
+        "Deep learning": 2,
+        "Image classification": 1,
+        "Infectious kidney stones": 1,
+        "Radiomics": 1,
+        "Knowledge distillation": 1,
+        "Lightweight network": 1,
+        "Medical image segmentation": 1,
+        "DeepLabV3+ model": 1,
+        "blunt craniocerebral injury": 1,
+        "computed tomography": 1,
+        "deep learning": 2,
+        "forensic medicine": 1,
+        "image segmentation": 1,
+        "DeepVariant": 1,
+        "NIPD": 1,
+        "NIPT": 1,
+        "cell free DNA": 1,
+        "cell free fetal DNA": 1,
+        "cfDNA": 1,
+        "fragmentomics": 1,
+        "liquid biopsy": 1,
+        "noninvasive prenatal diagnosis": 1,
+        "variant calling": 1,
+        "Coronary CT angiography": 1,
+        "Mechanomics": 1,
+        "Myocardial bridge": 1,
+        "Plaque formation": 1,
+        "colorectal cancer": 1,
+        "immune landscape": 1,
+        "potential drugs": 1,
+        "prognostic signature": 1,
+        "tumor microenvironment": 1,
+        "Fasa Cohort Study": 1,
+        "Hypertension": 1,
+        "Random Forest Model": 1,
+        "Related Predictors": 1
+      },
+      "2023": {
+        "data processing": 1,
+        "deep learning": 1,
+        "dicom": 1,
+        "medical imaging": 1,
+        "nifti": 1,
+        "nnunet": 1,
+        "open source": 1
+      }
+    },
+    "mesh_trends": {
+      "2024": {
+        "Machine Learning": 9,
+        "Humans": 20,
+        "Antimicrobial Stewardship": 1,
+        "Electronic Health Records": 4,
+        "Anti-Bacterial Agents": 1,
+        "Inpatients": 1,
+        "Drug Resistance, Bacterial": 2,
+        "Microbial Sensitivity Tests": 1,
+        "Drug Resistance, Microbial": 1,
+        "Selective Serotonin Reuptake Inhibitors": 1,
+        "Bacterial Infections": 1,
+        "Female": 6,
+        "Male": 5,
+        "Artificial Intelligence": 1,
+        "Electroencephalography": 1,
+        "Epilepsy": 1,
+        "Brain": 1,
+        "Algorithms": 7,
+        "Signal Processing, Computer-Assisted": 1,
+        "Electrocorticography": 1,
+        "Seizures": 1,
+        "Generative Artificial Intelligence": 1,
+        "Semantics": 1,
+        "International Classification of Diseases": 1,
+        "Natural Language Processing": 2,
+        "Disease": 1,
+        "Diagnosis": 1,
+        "Skin Diseases": 1,
+        "Neural Networks, Computer": 7,
+        "Image Interpretation, Computer-Assisted": 2,
+        "Heart Failure": 1,
+        "Neoplasms": 1,
+        "Risk Assessment": 2,
+        "Narration": 1,
+        "Large Language Models": 1,
+        "Mouth Neoplasms": 1,
+        "Deep Learning": 7,
+        "Image Processing, Computer-Assisted": 4,
+        "Intensive Care Units": 1,
+        "Stroke": 1,
+        "Antihypertensive Agents": 1,
+        "Blood Pressure": 1,
+        "Nicardipine": 1,
+        "Infusions, Intravenous": 1,
+        "Hypertension": 1,
+        "Reinforcement Machine Learning": 1,
+        "Cognitive Dysfunction": 1,
+        "Magnetic Resonance Imaging": 3,
+        "Alzheimer Disease": 1,
+        "Depressive Disorder, Major": 1,
+        "Adult": 1,
+        "Cross-Sectional Studies": 1,
+        "Middle Aged": 2,
+        "Anxiety": 1,
+        "Young Adult": 1,
+        "Comorbidity": 1,
+        "Anxiety Disorders": 1,
+        "Severity of Illness Index": 1,
+        "Suicide, Attempted": 1,
+        "Adolescent": 1,
+        "Child": 1,
+        "Age Determination by Skeleton": 1,
+        "Body Height": 1,
+        "Body Weight": 1,
+        "China": 1,
+        "Epiphyses": 1,
+        "Forensic Anthropology": 1,
+        "Linear Models": 1,
+        "Metacarpal Bones": 1,
+        "Radius": 1,
+        "Support Vector Machine": 1,
+        "Ulna": 1,
+        "Wrist": 1,
+        "Wrist Joint": 1,
+        "East Asian People": 1,
+        "Biomechanical Phenomena": 1,
+        "Movement": 1,
+        "Range of Motion, Articular": 1,
+        "Pain Measurement": 1,
+        "Infant, Newborn": 1,
+        "COVID-19": 1,
+        "Diagnostic Imaging": 1,
+        "SARS-CoV-2": 1,
+        "Databases, Factual": 1,
+        "Kidney Calculi": 1,
+        "Tomography, X-Ray Computed": 2,
+        "Imaging, Three-Dimensional": 1,
+        "Radiomics": 1,
+        "Heart": 1,
+        "Head Injuries, Closed": 1,
+        "Skull Fractures": 1,
+        "Craniocerebral Trauma": 1,
+        "Forensic Medicine": 1,
+        "Brain Contusion": 1,
+        "Hematoma, Subdural": 1,
+        "Hematoma, Epidural, Cranial": 1,
+        "Pregnancy": 1,
+        "Cell-Free Nucleic Acids": 1,
+        "Genotype": 1,
+        "Prenatal Diagnosis": 1,
+        "Fetus": 1,
+        "Noninvasive Prenatal Testing": 1,
+        "Genotyping Techniques": 1,
+        "Whole Genome Sequencing": 1,
+        "Plaque, Atherosclerotic": 1,
+        "Computed Tomography Angiography": 1,
+        "Retrospective Studies": 1,
+        "Myocardial Bridging": 1,
+        "Coronary Angiography": 1,
+        "Risk Factors": 1,
+        "Aged": 1,
+        "Coronary Vessels": 1,
+        "Coronary Artery Disease": 1,
+        "Tumor Microenvironment": 1,
+        "Colorectal Neoplasms": 1,
+        "Prognosis": 1,
+        "Biomarkers, Tumor": 1,
+        "Gene Expression Profiling": 1,
+        "Gene Expression Regulation, Neoplastic": 1
+      },
+      "2025": {
+        "Humans": 2,
+        "Deep Learning": 1,
+        "Child": 1,
+        "Retrospective Studies": 1,
+        "Male": 1,
+        "Female": 2,
+        "Radiography": 1,
+        "ROC Curve": 1,
+        "Elbow": 1,
+        "Neural Networks, Computer": 1,
+        "Child, Preschool": 1,
+        "Elbow Joint": 1,
+        "Emergency Service, Hospital": 1,
+        "Adolescent": 1,
+        "Infant": 1,
+        "Artificial Intelligence": 1,
+        "Machine Learning": 1,
+        "Embryo Transfer": 1,
+        "Pregnancy": 1,
+        "Adult": 1,
+        "Ultrasonography": 1,
+        "Prospective Studies": 1,
+        "Cryopreservation": 1,
+        "Endometrium": 1,
+        "Infertility, Female": 1,
+        "Pregnancy Rate": 1,
+        "Pregnancy Outcome": 1
+      },
+      "2023": {
+        "Humans": 1,
+        "Software": 1,
+        "Image Processing, Computer-Assisted": 1,
+        "Machine Learning": 1,
+        "Diagnostic Imaging": 1,
+        "Neoplasms": 1
+      }
+    },
+    "sentiment_trends": {
+      "2023": 0.07319439819439819,
+      "2024": 0.05392575804456666,
+      "2025": 0.07102056732219734
+    },
+    "author_counts": {
+      "2023": 10,
+      "2024": 197,
+      "2025": 146
+    }
+  },
+  "clusters": {
+    "clusters": {
+      "4": [
+        {
+          "id": "40980489",
+          "title": "Identifying clinical feature clusters toward predicting stroke in patients with asymptomatic carotid stenosis.",
+          "year": 2025
+        },
+        {
+          "id": "40046733",
+          "title": "Machine Learning Approaches for Predicting Progression to Alzheimer's Disease in Patients with Mild Cognitive Impairment.",
+          "year": 2025
+        },
+        {
+          "id": "40039767",
+          "title": "Explainable AI (XAI) for Neonatal Pain Assessment via Influence Function Modification.",
+          "year": 2024
+        }
+      ],
+      "3": [
+        {
+          "id": "40922766",
+          "title": "Electronic Health Record-Integrated Legal Documentation to Measure Involuntary Mental Health Detention of Children.",
+          "year": 2025
+        },
+        {
+          "id": "40654593",
+          "title": "Towards collaborative data science in mental health research: The ECNP neuroimaging network accessible data repository.",
+          "year": 2025
+        },
+        {
+          "id": "40604097",
+          "title": "Advanced ultrasound methods to improve chronic kidney disease diagnosis.",
+          "year": 2024
+        },
+        {
+          "id": "40433415",
+          "title": "CDT1 is a Potential Therapeutic Target for the Progression of NAFLD to HCC and the Exacerbation of Cancer.",
+          "year": 2025
+        },
+        {
+          "id": "40417572",
+          "title": "Emulation of a Target Trial to Estimate the Effect of Selective Serotonin Reuptake Inhibitors on the Development of Antimicrobial-Resistant Infections using Electronic Health Record Data and Causal Machine Learning.",
+          "year": 2024
+        },
+        {
+          "id": "40417544",
+          "title": "Enhancing Semantic and Structure Modeling of Diseases for Diagnosis Prediction.",
+          "year": 2024
+        },
+        {
+          "id": "40258236",
+          "title": "Use of deep learning model for paediatric elbow radiograph binomial classification: initial experience, performance and lessons learnt.",
+          "year": 2025
+        },
+        {
+          "id": "40224254",
+          "title": "Electrocardiogram sampling frequency for the optimal performance of complexity analysis and machine learning models: Discrimination between patients with and without paroxysmal atrial fibrillation using sinus rhythm electrocardiograms.",
+          "year": 2025
+        },
+        {
+          "id": "40199653",
+          "title": "An explainable ultrasound-based machine learning model for predicting reproductive outcomes after frozen embryo transfer.",
+          "year": 2025
+        },
+        {
+          "id": "40161947",
+          "title": "Automatic classification of ",
+          "year": 2025
+        },
+        {
+          "id": "40161462",
+          "title": "Machine Learning on Prediagnostic Metabolite Data Identifies Etiologic Endotypes of Exfoliation Glaucoma in United States Health Professionals.",
+          "year": 2025
+        },
+        {
+          "id": "40151359",
+          "title": "Artificial Intelligence Models to Identify Patients at High Risk for Glaucoma Using Self-reported Health Data in a United States National Cohort.",
+          "year": 2025
+        },
+        {
+          "id": "40124313",
+          "title": "Artificial Intelligence Models to Identify Patients with High Probability of Glaucoma Using Electronic Health Records.",
+          "year": 2025
+        },
+        {
+          "id": "40109491",
+          "title": "Using Machine Learning to Determine a Functional Classifier of Retaliation and Its Association With Aggression.",
+          "year": 2025
+        },
+        {
+          "id": "40017568",
+          "title": "From Diagnosis to Treatment: A Comprehensive Review of Biomarkers and Therapeutic Advances in Parkinson's Disease.",
+          "year": 2025
+        },
+        {
+          "id": "40013022",
+          "title": "Lurasidone uses and dosages in Spain: RETROLUR, a real-world retrospective analysis using artificial intelligence.",
+          "year": 2024
+        },
+        {
+          "id": "39990838",
+          "title": "[Coronary CT Angiography-Based Mechanomics Predicts Atherosclerotic Plaque Formation in Regions Proximal to Myocardial Bridging].",
+          "year": 2024
+        },
+        {
+          "id": "39968471",
+          "title": "A Study on Prevalence and Factors Affecting Hypertension in an Iranian Population: Results from the Fasa Cohort Study.",
+          "year": 2024
+        }
+      ],
+      "2": [
+        {
+          "id": "40893871",
+          "title": "Knowledge-Informed Machine Learning for Cancer Diagnosis and Prognosis: A Review.",
+          "year": 2025
+        },
+        {
+          "id": "40823261",
+          "title": "The integration of machine learning into traditional Chinese medicine.",
+          "year": 2025
+        },
+        {
+          "id": "40604228",
+          "title": "Rapid 3D imaging at cellular resolution for digital cytopathology with a multi-camera array scanner (MCAS).",
+          "year": 2024
+        },
+        {
+          "id": "40417584",
+          "title": "Enhancing Antibiotic Stewardship: A Machine Learning Approach to Predicting Antibiotic Resistance in Inpatient Care.",
+          "year": 2024
+        },
+        {
+          "id": "40417538",
+          "title": "Narrative Feature or Structured Feature? A Study of Large Language Models to Identify Cancer Patients at Risk of Heart Failure.",
+          "year": 2024
+        },
+        {
+          "id": "40417514",
+          "title": "PathSAM: Enhancing Oral Cancer Detection with Advanced Segmentation and Explainability.",
+          "year": 2024
+        },
+        {
+          "id": "40417489",
+          "title": "Ensuring Fairness in Detecting Mild Cognitive Impairment with MRI.",
+          "year": 2024
+        },
+        {
+          "id": "40303946",
+          "title": "Advanced computational tools, artificial intelligence and machine-learning approaches in gut microbiota and biomarker identification.",
+          "year": 2024
+        },
+        {
+          "id": "40144330",
+          "title": "Artificial Intelligence to Promote Racial and Ethnic Cardiovascular Health Equity.",
+          "year": 2024
+        },
+        {
+          "id": "40094037",
+          "title": "Advancements in pathology: Digital transformation, precision medicine, and beyond.",
+          "year": 2025
+        },
+        {
+          "id": "40061791",
+          "title": "Artificial Intelligence in Histopathology.",
+          "year": 2024
+        },
+        {
+          "id": "40027847",
+          "title": "[Sleep Innovation].",
+          "year": 2024
+        },
+        {
+          "id": "40000210",
+          "title": "[Cardiac magnetic resonance image segmentation based on lightweight network and knowledge distillation strategy].",
+          "year": 2024
+        },
+        {
+          "id": "39989910",
+          "title": "Med-ImageTools: An open-source Python package for robust data processing pipelines and curating medical imaging data.",
+          "year": 2023
+        }
+      ],
+      "1": [
+        {
+          "id": "40656101",
+          "title": "ADHD detection based on human action recognition.",
+          "year": 2024
+        },
+        {
+          "id": "40535105",
+          "title": "Towards the Generation of Medical Imaging Classifiers Robust to Common Perturbations.",
+          "year": 2024
+        },
+        {
+          "id": "40417558",
+          "title": "Neural Mosaics: Detecting Aberrant Brain Interactions using Algebraic Topology and Generative Artificial Intelligence.",
+          "year": 2024
+        },
+        {
+          "id": "40417541",
+          "title": "Robust Visual Identification of Under-resourced Dermatological Diagnoses with Classifier-Steered Background Masking.",
+          "year": 2024
+        },
+        {
+          "id": "40248839",
+          "title": "Innovative approaches to metabolic dysfunction-associated steatohepatitis diagnosis and stratification.",
+          "year": 2025
+        },
+        {
+          "id": "40115811",
+          "title": "Rapid enrichment and SERS differentiation of various bacteria in skin interstitial fluid by 4-MPBA-AuNPs-functionalized hydrogel microneedles.",
+          "year": 2025
+        },
+        {
+          "id": "40085041",
+          "title": "MRI Application in Quantification of Epiphyseal Development in the Wrist and Bone Age Estimation of Han Male Adolescents in East China.",
+          "year": 2024
+        },
+        {
+          "id": "40040106",
+          "title": "Neural Networks-Based Approach to Solve Inverse Kinematics Problems for Medical Applications.",
+          "year": 2024
+        },
+        {
+          "id": "40039337",
+          "title": "Investigating the Robustness of Vision Transformers against Label Noise in Medical Image Classification.",
+          "year": 2024
+        },
+        {
+          "id": "40000211",
+          "title": "[Identification of kidney stone types by deep learning integrated with radiomics features].",
+          "year": 2024
+        },
+        {
+          "id": "39992333",
+          "title": "Intelligent Recognition and Segmentation of Blunt Craniocerebral Injury CT Images Based on DeepLabV3+ Model.",
+          "year": 2024
+        },
+        {
+          "id": "39992001",
+          "title": "Noninvasive fetal genotyping using deep neural networks.",
+          "year": 2024
+        }
+      ],
+      "0": [
+        {
+          "id": "40417491",
+          "title": "Better Blood Pressure Control for Stroke Patients in the ICU: A Deep Reinforcement Learning with Supervised Guidance Approach for Adaptive Infusion Rate Tuning.",
+          "year": 2024
+        }
+      ]
+    },
+    "themes": {
+      "0": [
+        "time",
+        "stroke",
+        "rates",
+        "critical",
+        "human",
+        "patients",
+        "within",
+        "in",
+        "the",
+        "across"
+      ],
+      "1": [
+        "the",
+        "of",
+        "and",
+        "to",
+        "in",
+        "for",
+        "adhd",
+        "noise",
+        "images",
+        "is"
+      ],
+      "2": [
+        "and",
+        "the",
+        "of",
+        "to",
+        "cancer",
+        "in",
+        "ml",
+        "pathology",
+        "ai",
+        "for"
+      ],
+      "3": [
+        "the",
+        "and",
+        "of",
+        "to",
+        "in",
+        "was",
+        "were",
+        "with",
+        "glaucoma",
+        "model"
+      ],
+      "4": [
+        "the",
+        "influence",
+        "prediction",
+        "ad",
+        "for",
+        "similarity",
+        "to",
+        "feature",
+        "of",
+        "mci"
+      ]
+    }
+  },
+  "high_impact_predictions": [
+    {
+      "pmid": "40654593",
+      "title": "Towards collaborative data science in mental health research: The ECNP neuroimaging network accessible data repository.",
+      "year": 2025,
+      "impact_score": 5.900284090909091,
+      "features": {
+        "num_authors": 30,
+        "abstract_length": 1554,
+        "num_keywords": 7,
+        "num_mesh": 0,
+        "has_fulltext": false,
+        "year_recent": 0,
+        "sentiment_neutrality": 0.9334280303030303,
+        "subjectivity": 0.4305871212121213,
+        "sentence_count": 8
+      }
+    },
+    {
+      "pmid": "40085041",
+      "title": "MRI Application in Quantification of Epiphyseal Development in the Wrist and Bone Age Estimation of Han Male Adolescents in East China.",
+      "year": 2024,
+      "impact_score": 4.9745833333333325,
+      "features": {
+        "num_authors": 10,
+        "abstract_length": 1410,
+        "num_keywords": 8,
+        "num_mesh": 19,
+        "has_fulltext": false,
+        "year_recent": 1,
+        "sentiment_neutrality": 0.96875,
+        "subjectivity": 0.4229166666666667,
+        "sentence_count": 9
+      }
+    },
+    {
+      "pmid": "39992001",
+      "title": "Noninvasive fetal genotyping using deep neural networks.",
+      "year": 2024,
+      "impact_score": 4.256726190476189,
+      "features": {
+        "num_authors": 5,
+        "abstract_length": 1655,
+        "num_keywords": 13,
+        "num_mesh": 12,
+        "has_fulltext": false,
+        "year_recent": 1,
+        "sentiment_neutrality": 0.8956547619047619,
+        "subjectivity": 0.5283928571428571,
+        "sentence_count": 10
+      }
+    },
+    {
+      "pmid": "39992333",
+      "title": "Intelligent Recognition and Segmentation of Blunt Craniocerebral Injury CT Images Based on DeepLabV3+ Model.",
+      "year": 2024,
+      "impact_score": 4.111590909090909,
+      "features": {
+        "num_authors": 10,
+        "abstract_length": 2119,
+        "num_keywords": 7,
+        "num_mesh": 12,
+        "has_fulltext": false,
+        "year_recent": 1,
+        "sentiment_neutrality": 0.9638636363636364,
+        "subjectivity": 0.5479545454545456,
+        "sentence_count": 10
+      }
+    },
+    {
+      "pmid": "40199653",
+      "title": "An explainable ultrasound-based machine learning model for predicting reproductive outcomes after frozen embryo transfer.",
+      "year": 2025,
+      "impact_score": 3.8939583333333334,
+      "features": {
+        "num_authors": 10,
+        "abstract_length": 1740,
+        "num_keywords": 5,
+        "num_mesh": 13,
+        "has_fulltext": false,
+        "year_recent": 0,
+        "sentiment_neutrality": 0.825,
+        "subjectivity": 0.3854166666666667,
+        "sentence_count": 14
+      }
+    },
+    {
+      "pmid": "39989910",
+      "title": "Med-ImageTools: An open-source Python package for robust data processing pipelines and curating medical imaging data.",
+      "year": 2023,
+      "impact_score": 3.542736707736708,
+      "features": {
+        "num_authors": 10,
+        "abstract_length": 1041,
+        "num_keywords": 7,
+        "num_mesh": 6,
+        "has_fulltext": false,
+        "year_recent": 2,
+        "sentiment_neutrality": 0.9268056018056018,
+        "subjectivity": 0.3994385244385244,
+        "sentence_count": 5
+      }
+    },
+    {
+      "pmid": "40258236",
+      "title": "Use of deep learning model for paediatric elbow radiograph binomial classification: initial experience, performance and lessons learnt.",
+      "year": 2025,
+      "impact_score": 3.4410119047619045,
+      "features": {
+        "num_authors": 5,
+        "abstract_length": 1560,
+        "num_keywords": 5,
+        "num_mesh": 16,
+        "has_fulltext": false,
+        "year_recent": 0,
+        "sentiment_neutrality": 0.9485119047619047,
+        "subjectivity": 0.5383928571428571,
+        "sentence_count": 9
+      }
+    },
+    {
+      "pmid": "40417558",
+      "title": "Neural Mosaics: Detecting Aberrant Brain Interactions using Algebraic Topology and Generative Artificial Intelligence.",
+      "year": 2024,
+      "impact_score": 3.1747698412698413,
+      "features": {
+        "num_authors": 12,
+        "abstract_length": 1185,
+        "num_keywords": 0,
+        "num_mesh": 10,
+        "has_fulltext": false,
+        "year_recent": 1,
+        "sentiment_neutrality": 0.8947619047619048,
+        "subjectivity": 0.347063492063492,
+        "sentence_count": 7
+      }
+    },
+    {
+      "pmid": "40604228",
+      "title": "Rapid 3D imaging at cellular resolution for digital cytopathology with a multi-camera array scanner (MCAS).",
+      "year": 2024,
+      "impact_score": 3.125425974025974,
+      "features": {
+        "num_authors": 19,
+        "abstract_length": 507,
+        "num_keywords": 0,
+        "num_mesh": 0,
+        "has_fulltext": false,
+        "year_recent": 1,
+        "sentiment_neutrality": 0.9988511488511489,
+        "subjectivity": 0.4585914085914085,
+        "sentence_count": 4
+      }
+    },
+    {
+      "pmid": "39990838",
+      "title": "[Coronary CT Angiography-Based Mechanomics Predicts Atherosclerotic Plaque Formation in Regions Proximal to Myocardial Bridging].",
+      "year": 2024,
+      "impact_score": 3.1098529411764706,
+      "features": {
+        "num_authors": 4,
+        "abstract_length": 2242,
+        "num_keywords": 5,
+        "num_mesh": 14,
+        "has_fulltext": false,
+        "year_recent": 1,
+        "sentiment_neutrality": 0.9178921568627451,
+        "subjectivity": 0.5193627450980391,
+        "sentence_count": 17
+      }
+    },
+    {
+      "pmid": "40115811",
+      "title": "Rapid enrichment and SERS differentiation of various bacteria in skin interstitial fluid by 4-MPBA-AuNPs-functionalized hydrogel microneedles.",
+      "year": 2025,
+      "impact_score": 2.7466331955922865,
+      "features": {
+        "num_authors": 11,
+        "abstract_length": 866,
+        "num_keywords": 5,
+        "num_mesh": 0,
+        "has_fulltext": false,
+        "year_recent": 0,
+        "sentiment_neutrality": 0.996866391184573,
+        "subjectivity": 0.262534435261708,
+        "sentence_count": 7
+      }
+    },
+    {
+      "pmid": "40417584",
+      "title": "Enhancing Antibiotic Stewardship: A Machine Learning Approach to Predicting Antibiotic Resistance in Inpatient Care.",
+      "year": 2024,
+      "impact_score": 2.7460714285714287,
+      "features": {
+        "num_authors": 10,
+        "abstract_length": 1177,
+        "num_keywords": 0,
+        "num_mesh": 9,
+        "has_fulltext": false,
+        "year_recent": 1,
+        "sentiment_neutrality": 0.8117857142857143,
+        "subjectivity": 0.5510714285714285,
+        "sentence_count": 7
+      }
+    },
+    {
+      "pmid": "40248839",
+      "title": "Innovative approaches to metabolic dysfunction-associated steatohepatitis diagnosis and stratification.",
+      "year": 2025,
+      "impact_score": 2.5857954545454542,
+      "features": {
+        "num_authors": 9,
+        "abstract_length": 2052,
+        "num_keywords": 6,
+        "num_mesh": 0,
+        "has_fulltext": false,
+        "year_recent": 0,
+        "sentiment_neutrality": 0.8708333333333333,
+        "subjectivity": 0.5128787878787879,
+        "sentence_count": 11
+      }
+    },
+    {
+      "pmid": "40046733",
+      "title": "Machine Learning Approaches for Predicting Progression to Alzheimer's Disease in Patients with Mild Cognitive Impairment.",
+      "year": 2025,
+      "impact_score": 2.579,
+      "features": {
+        "num_authors": 10,
+        "abstract_length": 1663,
+        "num_keywords": 5,
+        "num_mesh": 0,
+        "has_fulltext": false,
+        "year_recent": 0,
+        "sentiment_neutrality": 0.8366666666666667,
+        "subjectivity": 0.5466666666666667,
+        "sentence_count": 11
+      }
+    },
+    {
+      "pmid": "40000211",
+      "title": "[Identification of kidney stone types by deep learning integrated with radiomics features].",
+      "year": 2024,
+      "impact_score": 2.5719444444444446,
+      "features": {
+        "num_authors": 5,
+        "abstract_length": 1371,
+        "num_keywords": 5,
+        "num_mesh": 7,
+        "has_fulltext": false,
+        "year_recent": 1,
+        "sentiment_neutrality": 0.9323148148148148,
+        "subjectivity": 0.41287037037037044,
+        "sentence_count": 7
+      }
+    },
+    {
+      "pmid": "40417572",
+      "title": "Emulation of a Target Trial to Estimate the Effect of Selective Serotonin Reuptake Inhibitors on the Development of Antimicrobial-Resistant Infections using Electronic Health Record Data and Causal Machine Learning.",
+      "year": 2024,
+      "impact_score": 2.5371296296296295,
+      "features": {
+        "num_authors": 9,
+        "abstract_length": 1079,
+        "num_keywords": 0,
+        "num_mesh": 8,
+        "has_fulltext": false,
+        "year_recent": 1,
+        "sentiment_neutrality": 0.9851851851851852,
+        "subjectivity": 0.3138888888888889,
+        "sentence_count": 7
+      }
+    },
+    {
+      "pmid": "39968471",
+      "title": "A Study on Prevalence and Factors Affecting Hypertension in an Iranian Population: Results from the Fasa Cohort Study.",
+      "year": 2024,
+      "impact_score": 2.4783035714285715,
+      "features": {
+        "num_authors": 10,
+        "abstract_length": 2084,
+        "num_keywords": 4,
+        "num_mesh": 0,
+        "has_fulltext": false,
+        "year_recent": 1,
+        "sentiment_neutrality": 0.9523660714285714,
+        "subjectivity": 0.36933035714285717,
+        "sentence_count": 13
+      }
+    },
+    {
+      "pmid": "40922766",
+      "title": "Electronic Health Record-Integrated Legal Documentation to Measure Involuntary Mental Health Detention of Children.",
+      "year": 2025,
+      "impact_score": 2.473465608465608,
+      "features": {
+        "num_authors": 9,
+        "abstract_length": 1158,
+        "num_keywords": 5,
+        "num_mesh": 0,
+        "has_fulltext": false,
+        "year_recent": 0,
+        "sentiment_neutrality": 0.9695767195767195,
+        "subjectivity": 0.23492063492063497,
+        "sentence_count": 7
+      }
+    },
+    {
+      "pmid": "40417489",
+      "title": "Ensuring Fairness in Detecting Mild Cognitive Impairment with MRI.",
+      "year": 2024,
+      "impact_score": 2.453888888888889,
+      "features": {
+        "num_authors": 10,
+        "abstract_length": 1056,
+        "num_keywords": 0,
+        "num_mesh": 6,
+        "has_fulltext": false,
+        "year_recent": 1,
+        "sentiment_neutrality": 0.9061111111111111,
+        "subjectivity": 0.5672222222222221,
+        "sentence_count": 7
+      }
+    },
+    {
+      "pmid": "40433415",
+      "title": "CDT1 is a Potential Therapeutic Target for the Progression of NAFLD to HCC and the Exacerbation of Cancer.",
+      "year": 2025,
+      "impact_score": 2.4295796614100182,
+      "features": {
+        "num_authors": 8,
+        "abstract_length": 2167,
+        "num_keywords": 6,
+        "num_mesh": 0,
+        "has_fulltext": false,
+        "year_recent": 0,
+        "sentiment_neutrality": 0.9047599721706865,
+        "subjectivity": 0.6089633580705011,
+        "sentence_count": 14
+      }
+    }
+  ],
+  "research_gaps": [
+    "Potential research gap: Intersection of 'Humans' (appears in 23 papers) and 'Image Processing, Computer-Assisted' (appears in 5 papers) - only 1 co-occurrence(s)",
+    "Potential research gap: Intersection of 'Humans' (appears in 23 papers) and 'Magnetic Resonance Imaging' (appears in 3 papers) - only 1 co-occurrence(s)",
+    "Potential research gap: Intersection of 'Machine learning' (appears in 14 papers) and 'Male' (appears in 6 papers) - only 1 co-occurrence(s)",
+    "Potential research gap: Intersection of 'Machine learning' (appears in 14 papers) and 'deep learning' (appears in 4 papers) - only 1 co-occurrence(s)",
+    "Potential research gap: Intersection of 'Machine Learning' (appears in 12 papers) and 'Male' (appears in 6 papers) - only 1 co-occurrence(s)",
+    "Potential research gap: Intersection of 'Deep learning' (appears in 4 papers) and 'Machine learning' (appears in 14 papers) - only 1 co-occurrence(s)",
+    "Potential research gap: Intersection of 'Image Processing, Computer-Assisted' (appears in 5 papers) and 'Machine Learning' (appears in 12 papers) - only 1 co-occurrence(s)",
+    "Potential research gap: Intersection of 'Artificial Intelligence' (appears in 3 papers) and 'Machine Learning' (appears in 12 papers) - only 1 co-occurrence(s)",
+    "Potential research gap: Intersection of 'Neural Networks, Computer' (appears in 8 papers) and 'artificial intelligence' (appears in 4 papers) - only 1 co-occurrence(s)",
+    "Potential research gap: Intersection of 'Deep Learning' (appears in 8 papers) and 'artificial intelligence' (appears in 4 papers) - only 1 co-occurrence(s)",
+    "Potential research gap: Intersection of 'Female' (appears in 8 papers) and 'artificial intelligence' (appears in 4 papers) - only 1 co-occurrence(s)",
+    "Potential research gap: Intersection of 'Artificial Intelligence' (appears in 3 papers) and 'Neural Networks, Computer' (appears in 8 papers) - only 1 co-occurrence(s)",
+    "Potential research gap: Intersection of 'Artificial Intelligence' (appears in 3 papers) and 'Deep Learning' (appears in 8 papers) - only 1 co-occurrence(s)",
+    "Potential research gap: Intersection of 'Artificial Intelligence' (appears in 3 papers) and 'Female' (appears in 8 papers) - only 1 co-occurrence(s)",
+    "Potential research gap: Intersection of 'Artificial intelligence' (appears in 3 papers) and 'Deep Learning' (appears in 8 papers) - only 1 co-occurrence(s)"
+  ]
+}
