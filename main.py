@@ -276,8 +276,9 @@ class EnhancedPubMedAnalyzer:
             return None
 
     def _get_pmcid(self, pmid: str) -> Optional[str]:
-        """Get PMC ID from PubMed ID for full-text access"""
+        """Get PMC ID from PubMed ID for full-text access with enhanced search"""
         try:
+            # First try the standard elink method
             params = {
                 "dbfrom": "pubmed",
                 "db": "pmc",
@@ -285,6 +286,10 @@ class EnhancedPubMedAnalyzer:
                 "retmode": "json",
                 "email": self.email,
             }
+
+            if self.api_key:
+                params["api_key"] = self.api_key
+
             response = requests.get(f"{self.base_url}elink.fcgi", params=params)
             data = response.json()
 
@@ -292,47 +297,175 @@ class EnhancedPubMedAnalyzer:
             if link_sets and "linksetdbs" in link_sets[0]:
                 for linksetdb in link_sets[0]["linksetdbs"]:
                     if linksetdb["dbto"] == "pmc":
-                        return "PMC" + linksetdb["links"][0]
-        except:
-            pass
+                        pmc_id = "PMC" + linksetdb["links"][0]
+                        logger.debug(f"Found PMC ID {pmc_id} for PMID {pmid}")
+                        return pmc_id
+
+            # If no PMC link found, try searching PMC directly
+            pmc_search_params = {
+                "db": "pmc",
+                "term": f"{pmid}[PMID]",
+                "retmode": "json",
+                "email": self.email,
+            }
+
+            if self.api_key:
+                pmc_search_params["api_key"] = self.api_key
+
+            pmc_response = requests.get(f"{self.base_url}esearch.fcgi", params=pmc_search_params)
+            pmc_data = pmc_response.json()
+
+            pmc_ids = pmc_data.get("esearchresult", {}).get("idlist", [])
+            if pmc_ids:
+                pmc_id = f"PMC{pmc_ids[0]}"
+                logger.debug(f"Found PMC ID {pmc_id} via PMC search for PMID {pmid}")
+                return pmc_id
+
+        except Exception as e:
+            logger.debug(f"Error getting PMC ID for PMID {pmid}: {e}")
+
         return None
 
-    async def _download_pdf(self, session: aiohttp.ClientSession, pmcid: str) -> bool:
-        """Download a single PDF asynchronously"""
-        url = f"https://www.ncbi.nlm.nih.gov/pmc/articles/{pmcid}/pdf/"
-        path = os.path.join(self.pdf_dir, f"{pmcid}.pdf")
-
-        if os.path.exists(path):
-            logger.debug(f"PDF already exists for {pmcid}")
-            return True
-
+    def _is_valid_pdf(self, file_path: str) -> bool:
+        """Check if downloaded file is a valid PDF"""
         try:
-            async with session.get(url) as response:
-                if response.status == 200:
-                    content = await response.read()
-                    with open(path, "wb") as f:
-                        f.write(content)
-                    logger.debug(f"Downloaded PDF for {pmcid}")
-                    return True
-                else:
-                    logger.warning(
-                        f"Failed to download PDF for {pmcid}: Status {response.status}"
-                    )
-                    return False
-        except Exception as e:
-            logger.error(f"Error downloading PDF for {pmcid}: {e}")
+            if not os.path.exists(file_path) or os.path.getsize(file_path) < 1024:
+                return False
+
+            with open(file_path, 'rb') as f:
+                header = f.read(4)
+                return header == b'%PDF'
+        except:
             return False
 
-    async def download_full_texts_async(self, pmcids: List[str]) -> Dict[str, bool]:
+    async def _download_pdf_with_retries(self, session: aiohttp.ClientSession, pmcid: str, max_retries: int = 3) -> bool:
+        """Download a single PDF with multiple URL attempts and retries"""
+        path = os.path.join(self.pdf_dir, f"{pmcid}.pdf")
+
+        # Check if valid PDF already exists
+        if os.path.exists(path) and self._is_valid_pdf(path):
+            logger.debug(f"Valid PDF already exists for {pmcid}")
+            return True
+
+        # Remove invalid existing file
+        if os.path.exists(path):
+            os.remove(path)
+
+        # Multiple URL patterns to try
+        url_patterns = [
+            f"https://www.ncbi.nlm.nih.gov/pmc/articles/{pmcid}/pdf/",
+            f"https://www.ncbi.nlm.nih.gov/pmc/articles/{pmcid}/pdf/{pmcid}.pdf",
+            f"https://ftp.ncbi.nlm.nih.gov/pub/pmc/oa_pdf/{pmcid[:2]}/{pmcid}.pdf",
+        ]
+
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            'Accept': 'application/pdf,*/*',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Encoding': 'gzip, deflate',
+            'Connection': 'keep-alive',
+        }
+
+        for url in url_patterns:
+            for retry in range(max_retries):
+                try:
+                    logger.info(f"Attempting to download {pmcid} from {url} (attempt {retry + 1})")
+
+                    timeout = aiohttp.ClientTimeout(total=30, connect=10)
+                    async with session.get(url, headers=headers, timeout=timeout) as response:
+                        if response.status == 200:
+                            content = await response.read()
+
+                            # Write and validate
+                            with open(path, "wb") as f:
+                                f.write(content)
+
+                            if self._is_valid_pdf(path):
+                                logger.info(f"Successfully downloaded valid PDF for {pmcid}")
+                                return True
+                            else:
+                                logger.warning(f"Downloaded file for {pmcid} is not a valid PDF")
+                                os.remove(path)
+
+                        elif response.status == 403:
+                            logger.warning(f"Access denied for {pmcid} at {url}")
+                            break  # Don't retry 403 errors for this URL
+                        else:
+                            logger.warning(f"HTTP {response.status} for {pmcid} at {url}")
+
+                except asyncio.TimeoutError:
+                    logger.warning(f"Timeout downloading {pmcid} from {url} (attempt {retry + 1})")
+                except Exception as e:
+                    logger.warning(f"Error downloading {pmcid} from {url} (attempt {retry + 1}): {e}")
+
+                if retry < max_retries - 1:
+                    await asyncio.sleep(2 ** retry)  # Exponential backoff
+
+        logger.error(f"Failed to download PDF for {pmcid} after trying all URLs and retries")
+        return False
+
+    async def _download_pdf(self, session: aiohttp.ClientSession, pmcid: str) -> bool:
+        """Download a single PDF asynchronously (wrapper for compatibility)"""
+        return await self._download_pdf_with_retries(session, pmcid)
+
+    async def download_full_texts_async(self, pmcids: List[str], min_success_rate: float = 0.3) -> Dict[str, bool]:
         """Download PDFs asynchronously for papers with PMC access"""
-        logger.info(f"Starting async download of {len(pmcids)} PDFs")
+        if not pmcids:
+            logger.warning("No PMC IDs provided for PDF download")
+            return {}
 
-        async with aiohttp.ClientSession() as session:
-            tasks = [self._download_pdf(session, pmcid) for pmcid in pmcids]
-            results = await asyncio.gather(*tasks)
+        logger.info(f"Starting robust async download of {len(pmcids)} PDFs")
+        logger.info(f"Minimum success rate required: {min_success_rate*100:.1f}%")
 
-        download_status = {pmcid: success for pmcid, success in zip(pmcids, results)}
-        logger.info(f"Downloaded {sum(results)} PDFs successfully")
+        # Create session with appropriate settings
+        connector = aiohttp.TCPConnector(limit=10, limit_per_host=5)
+        timeout = aiohttp.ClientTimeout(total=60)
+
+        async with aiohttp.ClientSession(connector=connector, timeout=timeout) as session:
+            # Process in smaller batches to avoid overwhelming the server
+            batch_size = 5
+            all_results = []
+
+            for i in range(0, len(pmcids), batch_size):
+                batch = pmcids[i:i + batch_size]
+                logger.info(f"Processing batch {i//batch_size + 1}/{(len(pmcids)-1)//batch_size + 1} ({len(batch)} PDFs)")
+
+                tasks = [self._download_pdf(session, pmcid) for pmcid in batch]
+                batch_results = await asyncio.gather(*tasks, return_exceptions=True)
+
+                # Handle exceptions
+                clean_results = []
+                for result in batch_results:
+                    if isinstance(result, Exception):
+                        logger.error(f"Download task failed with exception: {result}")
+                        clean_results.append(False)
+                    else:
+                        clean_results.append(result)
+
+                all_results.extend(clean_results)
+
+                # Brief pause between batches
+                if i + batch_size < len(pmcids):
+                    await asyncio.sleep(1)
+
+        download_status = {pmcid: success for pmcid, success in zip(pmcids, all_results)}
+        success_count = sum(all_results)
+        success_rate = success_count / len(pmcids) if pmcids else 0
+
+        logger.info(f"Downloaded {success_count}/{len(pmcids)} PDFs successfully ({success_rate*100:.1f}% success rate)")
+
+        # Check if we meet minimum success rate
+        if success_rate < min_success_rate:
+            logger.error(f"PDF download success rate ({success_rate*100:.1f}%) is below required minimum ({min_success_rate*100:.1f}%)")
+            logger.error("This may significantly impact the quality of full-text analysis")
+
+            # List failed downloads
+            failed_pmcids = [pmcid for pmcid, success in download_status.items() if not success]
+            if failed_pmcids:
+                logger.error(f"Failed to download PDFs for: {', '.join(failed_pmcids[:10])}{'...' if len(failed_pmcids) > 10 else ''}")
+
+            raise RuntimeError(f"Insufficient PDF downloads: {success_count}/{len(pmcids)} successful. Minimum required: {int(len(pmcids) * min_success_rate)}")
+
         return download_status
 
     def extract_sections_from_pdf(self, pdf_path: str) -> Dict[str, str]:
@@ -439,24 +572,57 @@ class EnhancedPubMedAnalyzer:
         """Process all downloaded PDFs and extract sections"""
         pmcids_with_pdfs = [p["pmcid"] for p in self.papers if "pmcid" in p]
 
-        for pmcid in tqdm(pmcids_with_pdfs, desc="Processing PDFs"):
+        if not pmcids_with_pdfs:
+            logger.error("No PMC IDs found for PDF processing!")
+            return
+
+        # First, verify which PDFs actually exist and are valid
+        valid_pdfs = []
+        for pmcid in pmcids_with_pdfs:
             pdf_path = os.path.join(self.pdf_dir, f"{pmcid}.pdf")
-            if not os.path.exists(pdf_path):
+            if os.path.exists(pdf_path) and self._is_valid_pdf(pdf_path):
+                valid_pdfs.append(pmcid)
+            else:
+                logger.warning(f"PDF not found or invalid for {pmcid}")
+
+        if not valid_pdfs:
+            logger.error("CRITICAL ERROR: No valid PDF files found to process!")
+            logger.error("Cannot proceed with full-text analysis.")
+            raise RuntimeError("No valid PDF files available for processing")
+
+        logger.info(f"Processing {len(valid_pdfs)} valid PDF files...")
+        processed_count = 0
+
+        for pmcid in tqdm(valid_pdfs, desc="Processing PDFs"):
+            pdf_path = os.path.join(self.pdf_dir, f"{pmcid}.pdf")
+
+            try:
+                sections = self.extract_sections_from_pdf(pdf_path)
+                if sections and any(len(section.strip()) > 100 for section in sections.values()):
+                    self.sections[pmcid] = sections
+
+                    # Save sections to JSON
+                    json_path = os.path.join(self.sections_dir, f"{pmcid}.json")
+                    with open(json_path, "w") as f:
+                        json.dump(sections, f, indent=2)
+
+                    # Combine all sections for full text
+                    self.full_texts[pmcid] = " ".join(sections.values())
+                    processed_count += 1
+                    logger.debug(f"Successfully processed {pmcid}")
+                else:
+                    logger.warning(f"No meaningful content extracted from {pmcid}")
+            except Exception as e:
+                logger.error(f"Error processing PDF {pmcid}: {e}")
                 continue
 
-            sections = self.extract_sections_from_pdf(pdf_path)
-            if sections:
-                self.sections[pmcid] = sections
+        logger.info(f"Successfully processed {processed_count} full-text PDFs")
 
-                # Save sections to JSON
-                json_path = os.path.join(self.sections_dir, f"{pmcid}.json")
-                with open(json_path, "w") as f:
-                    json.dump(sections, f)
+        if processed_count == 0:
+            logger.error("CRITICAL ERROR: No PDFs were successfully processed!")
+            raise RuntimeError("Failed to process any PDF files")
 
-                # Combine all sections for full text
-                self.full_texts[pmcid] = " ".join(sections.values())
-
-        logger.info(f"Processed {len(self.sections)} full-text PDFs")
+        logger.info(f"Full-text analysis will proceed with {processed_count} papers")
 
     def build_vector_indices(self):
         """Build FAISS indices for abstracts, full texts, and sections"""
@@ -1415,18 +1581,52 @@ def main():
     # 2. Fetch metadata
     papers = analyzer.fetch_papers_metadata(pmids)
 
-    # 3. Download full-text PDFs (async)
+    # 3. Download full-text PDFs (async) - REQUIRED STEP
     pmcids = [p["pmcid"] for p in papers if "pmcid" in p]
-    if pmcids:
-        logger.info(f"Downloading {len(pmcids)} full-text PDFs...")
-        download_status = asyncio.run(analyzer.download_full_texts_async(pmcids))
-        logger.info(f"Successfully downloaded {sum(download_status.values())} PDFs")
+    if not pmcids:
+        logger.error("No papers with PMC access found! Cannot proceed without full-text PDFs.")
+        logger.error("Please try a different search query that includes more open-access papers.")
+        return
 
-    # 4. Process full texts and extract sections
-    analyzer.process_full_texts()
+    logger.info(f"Downloading {len(pmcids)} full-text PDFs - this is required for analysis...")
+    try:
+        download_status = asyncio.run(analyzer.download_full_texts_async(pmcids, min_success_rate=0.3))
+        successful_downloads = sum(download_status.values())
+        logger.info(f"Successfully downloaded {successful_downloads}/{len(pmcids)} PDFs")
+
+        if successful_downloads == 0:
+            logger.error("CRITICAL ERROR: No PDFs were successfully downloaded!")
+            logger.error("Cannot proceed with analysis without full-text content.")
+            return
+    except RuntimeError as e:
+        logger.error(f"PDF download failed: {e}")
+        logger.error("Cannot proceed with analysis without sufficient full-text PDFs.")
+        return
+
+    # 4. Process full texts and extract sections - REQUIRED STEP
+    logger.info("Processing downloaded PDFs to extract full-text content...")
+    try:
+        analyzer.process_full_texts()
+    except RuntimeError as e:
+        logger.error(f"PDF processing failed: {e}")
+        logger.error("Cannot proceed with analysis without processed full-text content.")
+        return
+
+    # Verify we have sufficient full-text content
+    if len(analyzer.full_texts) == 0:
+        logger.error("CRITICAL ERROR: No full-text content was extracted from PDFs!")
+        logger.error("Cannot proceed with comprehensive analysis.")
+        return
 
     # 5. Build vector indices for semantic search
+    logger.info("Building vector indices for semantic search...")
     indices, metadata = analyzer.build_vector_indices()
+
+    # Validate we have working indices
+    if not analyzer.fulltext_index and not analyzer.abstract_index:
+        logger.error("CRITICAL ERROR: No vector indices were built!")
+        logger.error("Cannot proceed without semantic search capabilities.")
+        return
 
     # 6. Example semantic search
     if analyzer.fulltext_index:
