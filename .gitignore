@@ -8,3 +8,7 @@ wheels/
 
 # Virtual environments
 .venv
+pdfs/
+sections/
+vector_indices/
+
