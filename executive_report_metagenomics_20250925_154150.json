@@ -1,0 +1,84 @@
+{
+  "generation_timestamp": "2025-09-25T15:41:44.567983",
+  "executive_summary": {
+    "corpus_size": 25,
+    "nlp_analyses_performed": 2,
+    "rag_components_analyzed": 0,
+    "total_analysis_time": 0,
+    "key_insights": [
+      "Primary research theme involves: data, dna, database"
+    ]
+  },
+  "detailed_findings": {
+    "top_topics": [
+      {
+        "topic_id": "topic_5",
+        "coherence": 0.7378244625346725,
+        "top_words": [
+          "data",
+          "dna",
+          "database",
+          "sequencing",
+          "bacterial"
+        ]
+      },
+      {
+        "topic_id": "topic_7",
+        "coherence": 0.7206886333329277,
+        "top_words": [
+          "patients",
+          "immune",
+          "associated",
+          "microbiome",
+          "response"
+        ]
+      },
+      {
+        "topic_id": "topic_1",
+        "coherence": 0.6951679512239038,
+        "top_words": [
+          "human",
+          "metabolic",
+          "water",
+          "gut",
+          "resistance"
+        ]
+      },
+      {
+        "topic_id": "topic_3",
+        "coherence": 0.4967679780569051,
+        "top_words": [
+          "microbiota",
+          "group",
+          "efficiency",
+          "accumulation",
+          "bacteria"
+        ]
+      },
+      {
+        "topic_id": "topic_2",
+        "coherence": 0.4814419941158075,
+        "top_words": [
+          "iris",
+          "antibiotic",
+          "antibiotic resistance",
+          "complex",
+          "environmental"
+        ]
+      }
+    ],
+    "sentiment_overview": {
+      "mean_polarity": 0.08750825647996546,
+      "positive_ratio": 0.4782608695652174,
+      "negative_ratio": 0.043478260869565216,
+      "neutral_ratio": 0.4782608695652174
+    },
+    "research_gaps": [],
+    "trend_analysis": {
+      "publication_trends": {},
+      "journal_trends": {},
+      "keyword_evolution": false
+    }
+  },
+  "recommendations": []
+}

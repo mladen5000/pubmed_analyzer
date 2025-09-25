@@ -33,6 +33,12 @@ warnings.filterwarnings('ignore')
 
 logger = logging.getLogger(__name__)
 
+# Import LLM analysis components
+try:
+    from ..core.llm_analyzer import LLMAnalysisResult, ComprehensiveLLMAnalyzer
+except ImportError:
+    logger.warning("LLM analyzer not available for visualization")
+
 # Set advanced style
 plt.style.use('seaborn-v0_8-whitegrid')
 sns.set_palette("husl")
@@ -2215,3 +2221,411 @@ class EnhancedVisualizer:
             return self.colors['warning']
         else:
             return self.significance_colors['not_significant']
+
+    # =============================================================================
+    # LLM ANALYSIS VISUALIZATIONS
+    # =============================================================================
+
+    def create_llm_analysis_dashboard(self, llm_results: Dict[str, Any],
+                                    query: str) -> List[str]:
+        """Create comprehensive dashboard for LLM analysis results"""
+        logger.info("🧠 Creating LLM analysis dashboard")
+
+        generated_files = []
+
+        try:
+            # 1. LLM Score Distribution Analysis
+            score_files = self._create_llm_score_distributions(llm_results, query)
+            generated_files.extend(score_files)
+
+            # 2. Paper Quality Rankings
+            ranking_file = self._create_paper_quality_rankings(llm_results, query)
+            if ranking_file:
+                generated_files.append(ranking_file)
+
+            # 3. LLM Response Analysis
+            response_file = self._create_llm_response_analysis(llm_results, query)
+            if response_file:
+                generated_files.append(response_file)
+
+            # 4. Multi-dimensional Score Radar Chart
+            radar_file = self._create_llm_score_radar(llm_results, query)
+            if radar_file:
+                generated_files.append(radar_file)
+
+            # 5. Comparative Analysis Matrix
+            matrix_file = self._create_llm_comparison_matrix(llm_results, query)
+            if matrix_file:
+                generated_files.append(matrix_file)
+
+            # 6. LLM Insight WordClouds
+            insight_files = self._create_llm_insight_wordclouds(llm_results, query)
+            generated_files.extend(insight_files)
+
+            logger.info(f"✅ Generated {len(generated_files)} LLM visualization files")
+
+        except Exception as e:
+            logger.error(f"❌ LLM dashboard creation failed: {e}")
+
+        return generated_files
+
+    def _create_llm_score_distributions(self, llm_results: Dict[str, Any],
+                                      query: str) -> List[str]:
+        """Create score distribution visualizations"""
+        generated_files = []
+
+        try:
+            batch_results = llm_results.get('batch_analysis_results', {})
+            detailed_results = llm_results.get('detailed_results', [])
+
+            if not detailed_results:
+                logger.warning("No detailed LLM results found for visualization")
+                return generated_files
+
+            # Collect all scores by type
+            scores_by_type = defaultdict(list)
+            papers_by_score = defaultdict(list)
+
+            for result in detailed_results:
+                scores = result.get('structured_scores', {})
+                title = result.get('title', 'Unknown')
+                paper_id = result.get('paper_id', 'unknown')
+
+                for score_name, score_value in scores.items():
+                    scores_by_type[score_name].append(score_value)
+                    papers_by_score[score_name].append({
+                        'paper_id': paper_id,
+                        'title': title,
+                        'score': score_value
+                    })
+
+            if not scores_by_type:
+                logger.warning("No structured scores found for visualization")
+                return generated_files
+
+            # Create comprehensive score distribution dashboard
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+            # Calculate grid size
+            n_scores = len(scores_by_type)
+            n_cols = min(3, n_scores)
+            n_rows = (n_scores + n_cols - 1) // n_cols
+
+            fig, axes = plt.subplots(n_rows, n_cols, figsize=(5*n_cols, 4*n_rows))
+            if n_scores == 1:
+                axes = [axes]
+            elif n_rows == 1:
+                axes = [axes]
+            else:
+                axes = axes.flatten()
+
+            fig.suptitle(f'LLM Analysis Score Distributions: {query}',
+                        fontsize=16, fontweight='bold', y=0.98)
+
+            for i, (score_name, scores) in enumerate(scores_by_type.items()):
+                if i >= len(axes):
+                    break
+
+                ax = axes[i]
+
+                # Create histogram with KDE overlay
+                ax.hist(scores, bins=20, alpha=0.7, density=True,
+                       color=self.colors['primary'], edgecolor='black')
+
+                # Add KDE curve if enough data points
+                if len(scores) > 3:
+                    from scipy import stats
+                    kde = stats.gaussian_kde(scores)
+                    x_range = np.linspace(min(scores), max(scores), 100)
+                    ax.plot(x_range, kde(x_range), color=self.colors['secondary'], linewidth=2)
+
+                # Add statistical annotations
+                mean_score = np.mean(scores)
+                std_score = np.std(scores)
+                ax.axvline(mean_score, color='red', linestyle='--', alpha=0.7,
+                          label=f'Mean: {mean_score:.2f}')
+                ax.axvline(mean_score + std_score, color='orange', linestyle='--', alpha=0.5)
+                ax.axvline(mean_score - std_score, color='orange', linestyle='--', alpha=0.5)
+
+                ax.set_title(f'{score_name.replace("_", " ").title()}', fontweight='bold')
+                ax.set_xlabel('Score')
+                ax.set_ylabel('Density')
+                ax.legend()
+
+                # Add text box with statistics
+                stats_text = f'n={len(scores)}\\nμ={mean_score:.2f}\\nσ={std_score:.2f}'
+                ax.text(0.02, 0.98, stats_text, transform=ax.transAxes,
+                       verticalalignment='top', bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.8))
+
+            # Hide unused subplots
+            for j in range(i+1, len(axes)):
+                axes[j].set_visible(False)
+
+            plt.tight_layout()
+            filename = os.path.join(self.output_dir, f"llm_score_distributions_{timestamp}.png")
+            plt.savefig(filename, dpi=300, bbox_inches='tight')
+            plt.close()
+
+            generated_files.append(filename)
+            logger.info(f"✅ Created LLM score distributions: {filename}")
+
+        except Exception as e:
+            logger.error(f"❌ LLM score distributions creation failed: {e}")
+
+        return generated_files
+
+    def _create_paper_quality_rankings(self, llm_results: Dict[str, Any],
+                                     query: str) -> Optional[str]:
+        """Create paper quality ranking visualization"""
+        try:
+            detailed_results = llm_results.get('detailed_results', [])
+
+            if not detailed_results:
+                return None
+
+            # Calculate composite quality scores for each paper
+            paper_scores = defaultdict(lambda: {'scores': {}, 'title': '', 'metadata': {}})
+
+            for result in detailed_results:
+                paper_id = result.get('paper_id', 'unknown')
+                title = result.get('title', 'Unknown')
+                metadata = result.get('metadata', {})
+                scores = result.get('structured_scores', {})
+
+                paper_scores[paper_id]['title'] = title
+                paper_scores[paper_id]['metadata'] = metadata
+
+                for score_name, score_value in scores.items():
+                    paper_scores[paper_id]['scores'][score_name] = score_value
+
+            if not paper_scores:
+                return None
+
+            # Calculate composite scores
+            ranked_papers = []
+            for paper_id, data in paper_scores.items():
+                scores = data['scores']
+                if scores:
+                    # Calculate weighted composite score
+                    weights = {
+                        'overall_quality': 0.25,
+                        'methodology_rigor': 0.20,
+                        'innovation': 0.20,
+                        'field_significance': 0.15,
+                        'reproducibility': 0.10,
+                        'clarity': 0.10
+                    }
+
+                    composite_score = 0
+                    total_weight = 0
+
+                    for score_name, score_value in scores.items():
+                        weight = weights.get(score_name, 0.05)  # Default small weight
+                        composite_score += score_value * weight
+                        total_weight += weight
+
+                    if total_weight > 0:
+                        composite_score /= total_weight
+
+                    ranked_papers.append({
+                        'paper_id': paper_id,
+                        'title': data['title'],
+                        'composite_score': composite_score,
+                        'scores': scores,
+                        'journal': data['metadata'].get('journal', ''),
+                        'year': data['metadata'].get('year', '')
+                    })
+
+            # Sort by composite score
+            ranked_papers.sort(key=lambda x: x['composite_score'], reverse=True)
+
+            # Create visualization
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+            fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 10))
+            fig.suptitle(f'Paper Quality Rankings: {query}', fontsize=16, fontweight='bold')
+
+            # Left plot: Top papers ranking
+            top_papers = ranked_papers[:15]  # Show top 15
+
+            titles = [p['title'][:50] + '...' if len(p['title']) > 50 else p['title']
+                     for p in top_papers]
+            scores = [p['composite_score'] for p in top_papers]
+            colors = [self._get_quality_color(score * 10) for score in scores]
+
+            y_pos = np.arange(len(titles))
+            bars = ax1.barh(y_pos, scores, color=colors, alpha=0.8, edgecolor='black')
+
+            ax1.set_yticks(y_pos)
+            ax1.set_yticklabels(titles, fontsize=9)
+            ax1.set_xlabel('Composite Quality Score')
+            ax1.set_title('Top 15 Papers by Quality Score', fontweight='bold')
+            ax1.invert_yaxis()
+
+            # Add score labels on bars
+            for i, bar in enumerate(bars):
+                width = bar.get_width()
+                ax1.text(width + 0.01, bar.get_y() + bar.get_height()/2,
+                        f'{scores[i]:.2f}', ha='left', va='center', fontsize=8)
+
+            # Right plot: Score distribution by journal/year
+            if len(ranked_papers) > 5:
+                # Group by journal
+                journal_scores = defaultdict(list)
+                for paper in ranked_papers:
+                    journal = paper.get('journal', 'Unknown')[:20]
+                    journal_scores[journal].append(paper['composite_score'])
+
+                # Filter journals with at least 2 papers
+                filtered_journals = {j: scores for j, scores in journal_scores.items()
+                                   if len(scores) >= 2}
+
+                if filtered_journals:
+                    journal_names = list(filtered_journals.keys())
+                    journal_data = list(filtered_journals.values())
+
+                    bp = ax2.boxplot(journal_data, labels=journal_names, patch_artist=True)
+                    for patch in bp['boxes']:
+                        patch.set_facecolor(self.colors['primary'])
+                        patch.set_alpha(0.7)
+
+                    ax2.set_title('Quality Score Distribution by Journal', fontweight='bold')
+                    ax2.set_ylabel('Composite Quality Score')
+                    plt.setp(ax2.get_xticklabels(), rotation=45, ha='right')
+                else:
+                    ax2.text(0.5, 0.5, 'Insufficient data for\\njournal comparison',
+                            ha='center', va='center', transform=ax2.transAxes,
+                            fontsize=12, bbox=dict(boxstyle='round', facecolor='lightgray'))
+
+            plt.tight_layout()
+            filename = os.path.join(self.output_dir, f"paper_quality_rankings_{timestamp}.png")
+            plt.savefig(filename, dpi=300, bbox_inches='tight')
+            plt.close()
+
+            logger.info(f"✅ Created paper quality rankings: {filename}")
+            return filename
+
+        except Exception as e:
+            logger.error(f"❌ Paper quality rankings creation failed: {e}")
+            return None
+
+    def _create_llm_response_analysis(self, llm_results: Dict[str, Any],
+                                    query: str) -> Optional[str]:
+        """Analyze and visualize LLM response characteristics"""
+        try:
+            detailed_results = llm_results.get('detailed_results', [])
+
+            if not detailed_results:
+                return None
+
+            # Extract response characteristics
+            response_lengths = []
+            analysis_types = []
+            processing_times = []
+            llm_used = []
+
+            for result in detailed_results:
+                response = result.get('response', '')
+                analysis_type = result.get('analysis_type', 'unknown')
+                processing_time = result.get('processing_time', 0)
+                llm = result.get('llm_used', 'unknown')
+
+                response_lengths.append(len(response))
+                analysis_types.append(analysis_type)
+                processing_times.append(processing_time)
+                llm_used.append(llm)
+
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+            fig = plt.figure(figsize=(16, 12))
+            gs = gridspec.GridSpec(3, 2, figure=fig)
+
+            fig.suptitle(f'LLM Response Analysis: {query}', fontsize=16, fontweight='bold')
+
+            # 1. Response length distribution
+            ax1 = fig.add_subplot(gs[0, 0])
+            ax1.hist(response_lengths, bins=20, alpha=0.7, color=self.colors['primary'],
+                    edgecolor='black')
+            ax1.set_title('Response Length Distribution', fontweight='bold')
+            ax1.set_xlabel('Response Length (characters)')
+            ax1.set_ylabel('Frequency')
+
+            # Add statistics
+            mean_len = np.mean(response_lengths)
+            ax1.axvline(mean_len, color='red', linestyle='--', label=f'Mean: {mean_len:.0f}')
+            ax1.legend()
+
+            # 2. Processing time by analysis type
+            ax2 = fig.add_subplot(gs[0, 1])
+            analysis_type_times = defaultdict(list)
+            for atype, ptime in zip(analysis_types, processing_times):
+                analysis_type_times[atype].append(ptime)
+
+            type_names = list(analysis_type_times.keys())
+            type_times = list(analysis_type_times.values())
+
+            if len(type_names) > 1:
+                bp = ax2.boxplot(type_times, labels=type_names, patch_artist=True)
+                for patch in bp['boxes']:
+                    patch.set_facecolor(self.colors['secondary'])
+                    patch.set_alpha(0.7)
+
+                ax2.set_title('Processing Time by Analysis Type', fontweight='bold')
+                ax2.set_ylabel('Processing Time (seconds)')
+                plt.setp(ax2.get_xticklabels(), rotation=45, ha='right')
+            else:
+                ax2.bar(type_names, [np.mean(times) for times in type_times],
+                       color=self.colors['secondary'], alpha=0.7)
+                ax2.set_title('Average Processing Time', fontweight='bold')
+                ax2.set_ylabel('Processing Time (seconds)')
+
+            # 3. LLM usage distribution
+            ax3 = fig.add_subplot(gs[1, 0])
+            llm_counts = Counter(llm_used)
+            if llm_counts:
+                ax3.pie(llm_counts.values(), labels=llm_counts.keys(),
+                       autopct='%1.1f%%', startangle=90)
+                ax3.set_title('LLM Usage Distribution', fontweight='bold')
+
+            # 4. Response length vs processing time correlation
+            ax4 = fig.add_subplot(gs[1, 1])
+            scatter = ax4.scatter(response_lengths, processing_times, alpha=0.6,
+                                 c=range(len(response_lengths)), cmap='viridis')
+            ax4.set_xlabel('Response Length (characters)')
+            ax4.set_ylabel('Processing Time (seconds)')
+            ax4.set_title('Response Length vs Processing Time', fontweight='bold')
+
+            # Add correlation coefficient
+            if len(response_lengths) > 2:
+                corr_coef = np.corrcoef(response_lengths, processing_times)[0, 1]
+                ax4.text(0.02, 0.98, f'Correlation: {corr_coef:.3f}',
+                        transform=ax4.transAxes, verticalalignment='top',
+                        bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.8))
+
+            # 5. Analysis type frequency
+            ax5 = fig.add_subplot(gs[2, :])
+            analysis_counts = Counter(analysis_types)
+            if analysis_counts:
+                bars = ax5.bar(analysis_counts.keys(), analysis_counts.values(),
+                              color=sns.color_palette("husl", len(analysis_counts)), alpha=0.8)
+                ax5.set_title('Analysis Type Frequency', fontweight='bold')
+                ax5.set_ylabel('Number of Analyses')
+                plt.setp(ax5.get_xticklabels(), rotation=45, ha='right')
+
+                # Add value labels on bars
+                for bar in bars:
+                    height = bar.get_height()
+                    ax5.text(bar.get_x() + bar.get_width()/2., height,
+                            f'{int(height)}', ha='center', va='bottom')
+
+            plt.tight_layout()
+            filename = os.path.join(self.output_dir, f"llm_response_analysis_{timestamp}.png")
+            plt.savefig(filename, dpi=300, bbox_inches='tight')
+            plt.close()
+
+            logger.info(f"✅ Created LLM response analysis: {filename}")
+            return filename
+
+        except Exception as e:
+            logger.error(f"❌ LLM response analysis creation failed: {e}")
+            return None

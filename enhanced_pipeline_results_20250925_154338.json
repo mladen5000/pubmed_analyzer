@@ -1,0 +1,81 @@
+{
+  "query": "machine learning",
+  "pipeline_summary": {
+    "total_papers": 5,
+    "with_pmcids": 0,
+    "with_fulltext_potential": 0,
+    "downloaded_pdfs": 0,
+    "extracted_text": 0,
+    "success_rates": {
+      "pmcid_conversion": 0.0,
+      "pdf_download": 0,
+      "text_extraction": 0
+    }
+  },
+  "papers": [
+    {
+      "pmid": "PMID:40996710",
+      "pmcid": null,
+      "title": "Biomedical literature-based clinical phenotype definition discovery using large language models.",
+      "journal": "Database : the journal of biological databases and curation",
+      "abstract": "Electronic health record (EHR) phenotyping is a high-demand task because most phenotypes are not usually readily defined. The objective of this study is to develop an effective text-mining approach that automatically extracts clinical phenotype definitions-related sentences from biomedical literature. Abstract-level and full-text sentence-level classifiers were developed for clinical phenotype discovery from PubMed. We compared the performance of the abstract-level classifier on machine learning algorithms: support vector machine (SVM), logistic regression (LR), na\u00efve Bayes, and decision tree. SVM classifier showed the best performance (F-measure\u00a0=\u00a098%) in identifying clinical phenotype-relevant abstracts. It predicted 459\u2009406 clinical phenotype-related abstracts. For the full-text sentence-level classifier, we compared the performance of SVM, LR, na\u00efve Bayes, decision trees, convolutional neural networks, Bidirectional Encoder Representations from Transformers (BERT), and Bidirectional Encoder Representations from Transformers for Biomedical Text Mining (BioBERT). BioBERT model was the best performer among the full-text sentence-level classifiers (F-measure\u00a0=\u00a091%). We used these two optimal classifiers for large-scale screening of the PubMed database, starting with abstract retrieval and followed by predicting clinical phenotype-related sentences from full texts. The large-scale screening predicted over two million clinical phenotype-related sentences. Lastly, we developed a knowledgebase using positively predicted sentences, allowing users to query clinical phenotype-related sentences with a phenotype term of interest. The Clinical Phenotype Knowledgebase (CliPheKB) enables users to search for clinical phenotype terms and retrieve sentences related to a specific clinical phenotype of interest (https://cliphekb.shinyapps.io/phenotype-main/). Building upon prior methods, we developed a text mining pipeline to automatically extract clinical phenotype definition-related sentences from the literature. This high-throughput phenotyping approach is generalizable and scalable, and it is complementary to existing EHR phenotyping methods.",
+      "has_fulltext": false,
+      "download_success": false,
+      "pdf_path": null,
+      "error_message": null
+    },
+    {
+      "pmid": "PMID:40996705",
+      "pmcid": null,
+      "title": "The impact of curation errors in the PDBBind Database on machine learning predictions of protein-protein binding affinity.",
+      "journal": "Database : the journal of biological databases and curation",
+      "abstract": "The PDBBind database has been widely utilized for the computational prediction of protein-protein binding affinities. While the accuracy of the PDBBind-curated equilibrium dissociation constants (KD) has been reported for the protein-ligand subset of the PDBBind database, the curation accuracy has not been reported for the protein-protein subset. Here, we present a detailed manual analysis for the subset of PDBBind records with PubMed Central Open Access primary publications and find that ~19% of these records had KD values that were not supported by their primary publications. The impact of these putative curation errors on the machine learning-based prediction of KD from experimental protein-protein 3D structures was evaluated and correcting the curation errors improved the Pearson correlation coefficient between measured and random forest-predicted log10(KD) values by ~8 percentage points. This finding underscores the importance of dataset accuracy for computational modelling and highlights the need for more stringent curation processes when extracting information from the scientific literature.",
+      "has_fulltext": false,
+      "download_success": false,
+      "pdf_path": null,
+      "error_message": null
+    },
+    {
+      "pmid": "PMID:40996687",
+      "pmcid": null,
+      "title": "Risk of Progression and Costs of Care for Patients with Type 2 Diabetes and Chronic Kidney Disease.",
+      "journal": "Diabetes therapy : research, treatment and education of diabetes and related disorders",
+      "abstract": "INTRODUCTION: Chronic kidney disease (CKD) progression is associated with a significant incremental economic burden. Previous work has demonstrated high accuracy of the laboratory-based machine learning model, Klinrisk, in predicting the risk of CKD progression. We sought to use the Klinrisk model to evaluate the association of risk of CKD progression with healthcare resource utilization (HRU) and costs of care in adults with type 2 diabetes and CKD. METHODS: This retrospective observational study included 413,177 eligible patients from Optum's electronic health records database (1/1/2007-9/30/2022). Patients were classified into low-, medium-, and high-risk groups based on their 2-year risk of CKD progression as predicted by the Klinrisk model. All-cause HRU and medical costs during the 1\u00a0year after CKD were estimated for each group. RESULTS: Of the 413,177 patients included, 110,399 (26.7%) were classified as low-risk of CKD progression, 253,188 (61.3%) as medium-risk, and 49,590 (12.0%) as high-risk. The observed risk of CKD progression at 2\u00a0years, 5\u00a0years, and 10\u00a0years was 18.6%, 36.5%, and 54.1% for high-risk patients, 3.7%, 11.7%, and 26.4% for medium-risk patients, and 1.5%, 5.7%, and 15.8% for low-risk patients, which were similar to the predicted risks of CKD progression. High-risk patients had higher HRU and more than 2-3 times higher costs than lower-risk patients. Inpatient costs were the major cost driver for high-risk patients. CONCLUSIONS: The Klinrisk model accurately identified patients with type 2 diabetes and CKD requiring the most healthcare resources. Such tools can support the identification and targeting of high-risk patients for interventions that may lead to a more cost-effective model of care.",
+      "has_fulltext": false,
+      "download_success": false,
+      "pdf_path": null,
+      "error_message": null
+    },
+    {
+      "pmid": "PMID:40996609",
+      "pmcid": null,
+      "title": "Liquid biopsy based on multi-targeted capture of urinary tumor DNA combined with machine learning to detect urothelial carcinoma: a multicenter prospective study.",
+      "journal": "International urology and nephrology",
+      "abstract": "PURPOSE: Diagnostics for urothelial carcinoma have low sensitivity, thereby negatively impacting diagnostic outcomes. Herein, we present Biovue METHODS: The study involved 63 patients with malignant urothelial carcinoma, 13 patients with benign lesions, 115 patients with urinary symptoms, and 106 healthy participants undergoing physical check-ups. Detection was performed using real-time fluorescence quantitative polymerase chain reaction. Biovue RESULTS: The optional model demonstrated high diagnostic efficacy in distinguishing patients with high-grade urothelial carcinoma from non-patients. In the validation set, the receiver operating characteristic curve, sensitivity, specificity, accuracy, and positive and negative predictive values were 96.1% (95% CI 89.3-100), 94.7%, 99.1%, 98.5%, 94.7%, and 99.1%, respectively. For distinguishing patients with early-stage urothelial carcinoma from non-patients, the values in the training set were 91.7% (95% CI 84.2-99.1), 80%, 98.3%, 95.1%, 90.9%, and 95.8%, and those in the validation set were 92.5% (95% CI 86.6-98.4%), 80%, 95.7%, 93%, 80%, and 95.7%, respectively. The study's limitations include a relatively small cohort size, restricted regional diversity and a lack of long-term follow-up data to assess disease progression and treatment outcomes. CONCLUSIONS: In summary, Biovue",
+      "has_fulltext": false,
+      "download_success": false,
+      "pdf_path": null,
+      "error_message": null
+    },
+    {
+      "pmid": "PMID:40996570",
+      "pmcid": null,
+      "title": "Machine-learned density functional based quantum chemical computations for ethane: performance of DeepMind 21 on potential energy surface and molecular properties.",
+      "journal": "Journal of molecular modeling",
+      "abstract": "CONTEXT: Machine learning (ML) has proven to be a promising method in quantum chemistry calculations. Researchers at Google DeepMind established the superior performance of a machine-learned functional DeepMind 21 (DM21), the neural network-based functionals which emerged as a powerful tool for developing exchange-correlation energy approximation in density functional theory (DFT), to accurately explain the charge delocalization and strong correlation. While many researchers have cited the work of DeepMind, still there remains a paucity of research publications that perform algorithmic computations with DeepMind's AI model for quantum sciences. To address this lacuna, this paper investigates quantum chemistry algorithmic computations of potential energy surface and analysis properties of ethane molecule (C METHODS: In this method, the potential energy surfaces and properties (dipole moment, molecular orbitals) are computed using machine-learned density function approximation using pretrained deep learning models provided by DeepMind 21 researchers. By inserting deep learning inference in density functional theory (DFT) with a pretrained neural network, self-consistent field (SCF) energy at different geometries along the coordinate of interest is computed, and hence potential energy surfaces are computed and obtained. For a given specified molecular geometry, the algorithm computes the electron density vector, which is then used as a machine learning feature input for a pretrained DM21 deep learning model to predict the exchange-correlation. This methodology was implemented in a Python source code using frameworks such as PySCF and DM21.",
+      "has_fulltext": false,
+      "download_success": false,
+      "pdf_path": null,
+      "error_message": null
+    }
+  ],
+  "llm_analysis_summary": null,
+  "visualization_files": [
+    "visualizations/overview_dashboard_20250925_154335.png",
+    "visualizations/correlation_analysis_20250925_154336.png",
+    "visualizations/trend_analysis_20250925_154336.png",
+    "visualizations/comprehensive_network_20250925_154336.png",
+    "visualizations/interactive_dashboard_20250925_154335.html",
+    "visualizations/summary_visualization_20250925_154337.png"
+  ]
+}

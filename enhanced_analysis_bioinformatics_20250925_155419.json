@@ -1,0 +1,1053 @@
+{
+  "pipeline_info": {
+    "query": "bioinformatics",
+    "max_papers": 25,
+    "start_date": null,
+    "end_date": null,
+    "analysis_timestamp": "2025-09-25T15:53:06.194286",
+    "rag_enabled": true,
+    "visualizations_enabled": true
+  },
+  "phases": {
+    "data_collection": {
+      "total_papers": 25,
+      "successful_downloads": 0,
+      "completion_time": 65.14307
+    },
+    "nlp_analysis": {
+      "timestamp": "2025-09-25T15:54:11.337454",
+      "analyses_performed": [
+        "topic_modeling",
+        "sentiment_analysis"
+      ],
+      "topic_modeling": {
+        "topics": {
+          "topic_0": {
+            "words": [
+              [
+                "drug",
+                0.7600342042442134
+              ],
+              [
+                "gene",
+                0.7139107955814973
+              ],
+              [
+                "biology",
+                0.6655368733663224
+              ],
+              [
+                "multidrug resistant",
+                0.6364466416556158
+              ],
+              [
+                "multidrug",
+                0.6364466416556158
+              ],
+              [
+                "resistant",
+                0.6364466416556158
+              ],
+              [
+                "resource",
+                0.6258989453991336
+              ],
+              [
+                "genome",
+                0.589239999530852
+              ],
+              [
+                "toxicity",
+                0.570041945045308
+              ],
+              [
+                "data",
+                0.5632165795413197
+              ]
+            ],
+            "coherence": 0.6824750313006529
+          },
+          "topic_1": {
+            "words": [
+              [
+                "data",
+                0.8586717477065946
+              ],
+              [
+                "activity",
+                0.7806985679306594
+              ],
+              [
+                "microbial",
+                0.6749695210769021
+              ],
+              [
+                "project",
+                0.6315088281319426
+              ],
+              [
+                "manual",
+                0.47977635040198324
+              ],
+              [
+                "database",
+                0.44945779083717974
+              ],
+              [
+                "annotations",
+                0.44704445133291276
+              ],
+              [
+                "community",
+                0.4268762200226586
+              ],
+              [
+                "management",
+                0.4167780586581289
+              ],
+              [
+                "information",
+                0.41151843757885764
+              ]
+            ],
+            "coherence": 0.6851250030496164
+          },
+          "topic_2": {
+            "words": [
+              [
+                "immune",
+                0.5543864097902227
+              ],
+              [
+                "infection",
+                0.538660939204352
+              ],
+              [
+                "tissue",
+                0.4315432644987163
+              ],
+              [
+                "datasets",
+                0.4121045651574964
+              ],
+              [
+                "identification",
+                0.41010046949544837
+              ],
+              [
+                "specific",
+                0.3404312668485536
+              ],
+              [
+                "cell",
+                0.33689390107367534
+              ],
+              [
+                "github",
+                0.3343576317043514
+              ],
+              [
+                "algorithms",
+                0.33435491449552524
+              ],
+              [
+                "enrichment",
+                0.3343421529254287
+              ]
+            ],
+            "coherence": 0.4693591296292471
+          },
+          "topic_3": {
+            "words": [
+              [
+                "compounds",
+                0.5968442743985647
+              ],
+              [
+                "genes",
+                0.5934315909764221
+              ],
+              [
+                "promising",
+                0.5887508789625335
+              ],
+              [
+                "binding",
+                0.5533390582501353
+              ],
+              [
+                "progression",
+                0.5204728842815352
+              ],
+              [
+                "analyses",
+                0.5141063627867533
+              ],
+              [
+                "kcal",
+                0.4957757734346366
+              ],
+              [
+                "kcal mol",
+                0.4957757734346366
+              ],
+              [
+                "mol",
+                0.4957757734346366
+              ],
+              [
+                "identified",
+                0.47213307386112385
+              ]
+            ],
+            "coherence": 0.5705677373738383
+          },
+          "topic_4": {
+            "words": [
+              [
+                "clinical",
+                0.6083239290275372
+              ],
+              [
+                "text",
+                0.46362690655365113
+              ],
+              [
+                "cancer",
+                0.45464830252889177
+              ],
+              [
+                "related",
+                0.41281106970168147
+              ],
+              [
+                "level",
+                0.381145322936639
+              ],
+              [
+                "viability",
+                0.37923804456837334
+              ],
+              [
+                "cells",
+                0.33762051345733546
+              ],
+              [
+                "potential",
+                0.32283653750958285
+              ],
+              [
+                "molecular",
+                0.31025839361661645
+              ],
+              [
+                "mining",
+                0.2942823696593831
+              ]
+            ],
+            "coherence": 0.4641111061496801
+          },
+          "topic_5": {
+            "words": [
+              [
+                "oncogenic",
+                0.4821464725618019
+              ],
+              [
+                "related",
+                0.3852480441175764
+              ],
+              [
+                "risk",
+                0.3411207868739039
+              ],
+              [
+                "knowledge",
+                0.3241175591464035
+              ],
+              [
+                "gene",
+                0.27914957090976045
+              ],
+              [
+                "analysis",
+                0.27123220595792424
+              ],
+              [
+                "data",
+                0.2453817898176302
+              ],
+              [
+                "clinicians",
+                0.24404913453879074
+              ],
+              [
+                "http",
+                0.24404913453879074
+              ],
+              [
+                "improve",
+                0.24404609603721822
+              ]
+            ],
+            "coherence": 0.36235648672188925
+          },
+          "topic_6": {
+            "words": [
+              [
+                "gene",
+                0.8384532102906992
+              ],
+              [
+                "multi",
+                0.6533142922105519
+              ],
+              [
+                "database",
+                0.620984636879865
+              ],
+              [
+                "binding",
+                0.6190821495466042
+              ],
+              [
+                "omics",
+                0.6045572761168195
+              ],
+              [
+                "events",
+                0.5290692702416089
+              ],
+              [
+                "expressed",
+                0.4886857513102902
+              ],
+              [
+                "activity",
+                0.42844735912691667
+              ],
+              [
+                "information",
+                0.4043352981682103
+              ],
+              [
+                "target",
+                0.3984807797094918
+              ]
+            ],
+            "coherence": 0.6672783130089079
+          },
+          "topic_7": {
+            "words": [
+              [
+                "genes",
+                1.0541714197463123
+              ],
+              [
+                "sets",
+                0.5210178582545846
+              ],
+              [
+                "cell",
+                0.45688355888785376
+              ],
+              [
+                "cancer",
+                0.45059146019081303
+              ],
+              [
+                "cellular",
+                0.4476168789072071
+              ],
+              [
+                "causal",
+                0.441020695782852
+              ],
+              [
+                "datasets",
+                0.39699924757718436
+              ],
+              [
+                "researchers explore",
+                0.3916198672144122
+              ],
+              [
+                "researchers",
+                0.37812486571115256
+              ],
+              [
+                "analyses",
+                0.3708529177845436
+              ]
+            ],
+            "coherence": 0.5860562351973542
+          }
+        },
+        "document_topics": [
+          {
+            "document_index": 0,
+            "dominant_topic": 5,
+            "confidence": 0.8995853426188827,
+            "topic_distribution": [
+              0.014352468538290416,
+              0.014346272180922735,
+              0.014340725849835515,
+              0.014349312227821629,
+              0.014343584487274953,
+              0.8995853426188827,
+              0.014347105352862296,
+              0.014335188744109668
+            ]
+          },
+          {
+            "document_index": 1,
+            "dominant_topic": 0,
+            "confidence": 0.861004672955756,
+            "topic_distribution": [
+              0.861004672955756,
+              0.019840204330259677,
+              0.0198248450752043,
+              0.01983743423404677,
+              0.01992738544733357,
+              0.019824229328089915,
+              0.019887768579532283,
+              0.019853460049777574
+            ]
+          },
+          {
+            "document_index": 2,
+            "dominant_topic": 7,
+            "confidence": 0.7899999951692961,
+            "topic_distribution": [
+              0.030020242470941188,
+              0.029973964657543484,
+              0.02997368181415874,
+              0.03002285058888999,
+              0.029992420266757632,
+              0.02997717727503903,
+              0.03003966775737374,
+              0.7899999951692961
+            ]
+          },
+          {
+            "document_index": 3,
+            "dominant_topic": 1,
+            "confidence": 0.8799816440008377,
+            "topic_distribution": [
+              0.017145176273114668,
+              0.8799816440008377,
+              0.017143745645881055,
+              0.01714724785563369,
+              0.017144988232805428,
+              0.017146173808519082,
+              0.017143172629894107,
+              0.01714785155331431
+            ]
+          },
+          {
+            "document_index": 4,
+            "dominant_topic": 7,
+            "confidence": 0.9024408546024311,
+            "topic_distribution": [
+              0.013941705233302166,
+              0.013938393951689075,
+              0.013932555933009192,
+              0.013941774714200005,
+              0.01393730166319341,
+              0.013927024146861013,
+              0.013940389755314213,
+              0.9024408546024311
+            ]
+          },
+          {
+            "document_index": 5,
+            "dominant_topic": 4,
+            "confidence": 0.8848147627654683,
+            "topic_distribution": [
+              0.01645078503576433,
+              0.016451466618606185,
+              0.01644648892157314,
+              0.016465485340582415,
+              0.8848147627654683,
+              0.016442477318455776,
+              0.016480761412991478,
+              0.016447772586558308
+            ]
+          },
+          {
+            "document_index": 6,
+            "dominant_topic": 6,
+            "confidence": 0.880900373087503,
+            "topic_distribution": [
+              0.017041627078306074,
+              0.017012102626225403,
+              0.017008212332116735,
+              0.017033920744758197,
+              0.01699488780745254,
+              0.016992306303752622,
+              0.880900373087503,
+              0.0170165700198854
+            ]
+          },
+          {
+            "document_index": 7,
+            "dominant_topic": 7,
+            "confidence": 0.9019512765697052,
+            "topic_distribution": [
+              0.0140119610478947,
+              0.014021904594742311,
+              0.014003036321581582,
+              0.01400890666324082,
+              0.013998710682714473,
+              0.01399987530547876,
+              0.014004328814642204,
+              0.9019512765697052
+            ]
+          },
+          {
+            "document_index": 8,
+            "dominant_topic": 6,
+            "confidence": 0.8742488848734143,
+            "topic_distribution": [
+              0.01796581254832948,
+              0.017960378225431662,
+              0.017950231052373682,
+              0.017967420549835623,
+              0.017971384409957238,
+              0.017953144742620927,
+              0.8742488848734143,
+              0.01798274359803702
+            ]
+          },
+          {
+            "document_index": 9,
+            "dominant_topic": 1,
+            "confidence": 0.873615889486583,
+            "topic_distribution": [
+              0.01806505497088179,
+              0.873615889486583,
+              0.01804767074780401,
+              0.018052304963355154,
+              0.018049164843621023,
+              0.01805274785376733,
+              0.01806433974156145,
+              0.018052827392426366
+            ]
+          },
+          {
+            "document_index": 10,
+            "dominant_topic": 0,
+            "confidence": 0.8853656705048087,
+            "topic_distribution": [
+              0.8853656705048087,
+              0.01638055561638945,
+              0.01637427358142538,
+              0.016383042423677396,
+              0.01637318979656223,
+              0.01637131599714541,
+              0.016378468022830668,
+              0.016373484057160746
+            ]
+          },
+          {
+            "document_index": 11,
+            "dominant_topic": 3,
+            "confidence": 0.8981926862555318,
+            "topic_distribution": [
+              0.014550042726012005,
+              0.01453267700368026,
+              0.014532703858207503,
+              0.8981926862555318,
+              0.014529494692994145,
+              0.014526719429744196,
+              0.014567698313449581,
+              0.014567977720380473
+            ]
+          },
+          {
+            "document_index": 12,
+            "dominant_topic": 3,
+            "confidence": 0.9028704065781457,
+            "topic_distribution": [
+              0.013912057842529097,
+              0.0138658595955078,
+              0.013869674924717235,
+              0.9028704065781457,
+              0.01388167507027593,
+              0.013863969617434014,
+              0.013869714765264838,
+              0.013866641606125314
+            ]
+          },
+          {
+            "document_index": 13,
+            "dominant_topic": 0,
+            "confidence": 0.9075836752389573,
+            "topic_distribution": [
+              0.9075836752389573,
+              0.013207052499778915,
+              0.013191867504329744,
+              0.013211203465279089,
+              0.013184549166154453,
+              0.013181240004630225,
+              0.013222301168655347,
+              0.013218110952214908
+            ]
+          },
+          {
+            "document_index": 14,
+            "dominant_topic": 0,
+            "confidence": 0.9002185497121603,
+            "topic_distribution": [
+              0.9002185497121603,
+              0.014254815517902497,
+              0.014250003612944304,
+              0.014253817709536086,
+              0.014250498564231131,
+              0.014244816382835607,
+              0.014253915944669819,
+              0.014273582555720392
+            ]
+          },
+          {
+            "document_index": 15,
+            "dominant_topic": 3,
+            "confidence": 0.8657701405268625,
+            "topic_distribution": [
+              0.019181765647526782,
+              0.01918129993922696,
+              0.01917238487691746,
+              0.8657701405268625,
+              0.01917363977845856,
+              0.01917515225197928,
+              0.019174210566273928,
+              0.019171406412754423
+            ]
+          },
+          {
+            "document_index": 16,
+            "dominant_topic": 3,
+            "confidence": 0.8991343730004142,
+            "topic_distribution": [
+              0.014412012919493252,
+              0.014405984528862312,
+              0.014408114523280408,
+              0.8991343730004142,
+              0.014410037177135536,
+              0.01440433881842677,
+              0.014417778882280661,
+              0.014407360150106782
+            ]
+          },
+          {
+            "document_index": 17,
+            "dominant_topic": 6,
+            "confidence": 0.8862630438385273,
+            "topic_distribution": [
+              0.016244367091846363,
+              0.01624148121706136,
+              0.016243119443969525,
+              0.016259033001178962,
+              0.01626033164118394,
+              0.016240574771664323,
+              0.8862630438385273,
+              0.01624804899456815
+            ]
+          },
+          {
+            "document_index": 18,
+            "dominant_topic": 0,
+            "confidence": 0.7081618067932725,
+            "topic_distribution": [
+              0.7081618067932725,
+              0.041689949632491806,
+              0.04168995134413746,
+              0.041692624067258606,
+              0.041689952902810024,
+              0.041689962451625075,
+              0.04169580678763523,
+              0.04168994602076927
+            ]
+          },
+          {
+            "document_index": 19,
+            "dominant_topic": 2,
+            "confidence": 0.8927887798280085,
+            "topic_distribution": [
+              0.015329159904734718,
+              0.015314664178355558,
+              0.8927887798280085,
+              0.015334343714004332,
+              0.015304769617949911,
+              0.015301108119433826,
+              0.015316136897879112,
+              0.015311037739634065
+            ]
+          },
+          {
+            "document_index": 20,
+            "dominant_topic": 1,
+            "confidence": 0.8270522469517152,
+            "topic_distribution": [
+              0.02471831784300342,
+              0.8270522469517152,
+              0.024709783734357737,
+              0.024700786228698222,
+              0.024707003099389425,
+              0.02470107952818902,
+              0.024712064712600172,
+              0.024698717902046717
+            ]
+          },
+          {
+            "document_index": 21,
+            "dominant_topic": 4,
+            "confidence": 0.8944960876162604,
+            "topic_distribution": [
+              0.015076029921599803,
+              0.01506426322978776,
+              0.01506299317890878,
+              0.015087200792658585,
+              0.8944960876162604,
+              0.015066289846501253,
+              0.015076703149440143,
+              0.015070432264843298
+            ]
+          },
+          {
+            "document_index": 22,
+            "dominant_topic": 6,
+            "confidence": 0.8885211237899688,
+            "topic_distribution": [
+              0.015931224419084723,
+              0.015935780185853746,
+              0.015935132859076388,
+              0.015929409197408363,
+              0.015910157374374727,
+              0.01590822650473866,
+              0.8885211237899688,
+              0.01592894566949458
+            ]
+          },
+          {
+            "document_index": 23,
+            "dominant_topic": 2,
+            "confidence": 0.9010585763901381,
+            "topic_distribution": [
+              0.014137422086094914,
+              0.014127296268613533,
+              0.9010585763901381,
+              0.014145639357348376,
+              0.014133164644095449,
+              0.014126817127084381,
+              0.014130435481708243,
+              0.014140648644916858
+            ]
+          }
+        ],
+        "n_topics": 8,
+        "perplexity": 31306.03509009018
+      },
+      "sentiment_analysis": {
+        "overall_sentiment": {
+          "mean_polarity": 0.09702947303144256,
+          "std_polarity": 0.06616843312580979,
+          "mean_subjectivity": 0.45736043736901205,
+          "positive_ratio": 0.4583333333333333,
+          "negative_ratio": 0.0,
+          "neutral_ratio": 0.5416666666666666
+        },
+        "aspect_sentiments": {
+          "method": {
+            "mean_sentiment": 0.12114219114219113,
+            "count": 13
+          },
+          "result": {
+            "mean_sentiment": 0.15025641025641026,
+            "count": 13
+          },
+          "conclusion": {
+            "mean_sentiment": 0.11666666666666665,
+            "count": 3
+          },
+          "limitation": {
+            "mean_sentiment": 0.13333333333333333,
+            "count": 1
+          },
+          "future work": {
+            "mean_sentiment": 0.05974326599326601,
+            "count": 9
+          }
+        },
+        "emotion_analysis": {},
+        "document_sentiments": [
+          {
+            "index": 0,
+            "polarity": 0.1122348484848485,
+            "subjectivity": 0.4452272727272727,
+            "label": "positive"
+          },
+          {
+            "index": 1,
+            "polarity": -0.015154761904761904,
+            "subjectivity": 0.4606309523809523,
+            "label": "neutral"
+          },
+          {
+            "index": 2,
+            "polarity": 0.05429421768707483,
+            "subjectivity": 0.4151360544217687,
+            "label": "neutral"
+          },
+          {
+            "index": 3,
+            "polarity": 0.17272727272727273,
+            "subjectivity": 0.4,
+            "label": "positive"
+          },
+          {
+            "index": 4,
+            "polarity": 0.1457792207792208,
+            "subjectivity": 0.5975108225108225,
+            "label": "positive"
+          },
+          {
+            "index": 5,
+            "polarity": 0.2584848484848485,
+            "subjectivity": 0.34136363636363637,
+            "label": "positive"
+          },
+          {
+            "index": 6,
+            "polarity": 0.04191176470588236,
+            "subjectivity": 0.3203431372549019,
+            "label": "neutral"
+          },
+          {
+            "index": 7,
+            "polarity": 0.00357142857142857,
+            "subjectivity": 0.28095238095238095,
+            "label": "neutral"
+          },
+          {
+            "index": 8,
+            "polarity": 0.06292335115864528,
+            "subjectivity": 0.34144385026737967,
+            "label": "neutral"
+          },
+          {
+            "index": 9,
+            "polarity": 0.07100000000000001,
+            "subjectivity": 0.5840000000000001,
+            "label": "neutral"
+          },
+          {
+            "index": 10,
+            "polarity": 0.12891022021456805,
+            "subjectivity": 0.45558065123282515,
+            "label": "positive"
+          },
+          {
+            "index": 11,
+            "polarity": 0.1390625,
+            "subjectivity": 0.5984375000000001,
+            "label": "positive"
+          },
+          {
+            "index": 12,
+            "polarity": 0.17459415584415588,
+            "subjectivity": 0.5663555194805194,
+            "label": "positive"
+          },
+          {
+            "index": 13,
+            "polarity": 0.03720238095238095,
+            "subjectivity": 0.5703869047619047,
+            "label": "neutral"
+          },
+          {
+            "index": 14,
+            "polarity": 0.125,
+            "subjectivity": 0.5166666666666666,
+            "label": "positive"
+          },
+          {
+            "index": 15,
+            "polarity": 0.12007575757575759,
+            "subjectivity": 0.5238636363636364,
+            "label": "positive"
+          },
+          {
+            "index": 16,
+            "polarity": 0.20613636363636365,
+            "subjectivity": 0.5347727272727274,
+            "label": "positive"
+          },
+          {
+            "index": 17,
+            "polarity": 0.059222222222222225,
+            "subjectivity": 0.5896666666666667,
+            "label": "neutral"
+          },
+          {
+            "index": 18,
+            "polarity": 0.0,
+            "subjectivity": 0.0,
+            "label": "neutral"
+          },
+          {
+            "index": 19,
+            "polarity": 0.03988365800865801,
+            "subjectivity": 0.4541260822510823,
+            "label": "neutral"
+          },
+          {
+            "index": 20,
+            "polarity": 0.07333333333333336,
+            "subjectivity": 0.4116666666666666,
+            "label": "neutral"
+          },
+          {
+            "index": 21,
+            "polarity": 0.08612914862914864,
+            "subjectivity": 0.6477453102453101,
+            "label": "neutral"
+          },
+          {
+            "index": 22,
+            "polarity": 0.14366220735785953,
+            "subjectivity": 0.5214437012263099,
+            "label": "positive"
+          },
+          {
+            "index": 23,
+            "polarity": 0.08772321428571428,
+            "subjectivity": 0.39933035714285714,
+            "label": "neutral"
+          }
+        ]
+      },
+      "error": "n_components=50 must be between 0 and min(n_samples, n_features)=24 with svd_solver='full'",
+      "completion_time": 1.602067
+    },
+    "reporting": {
+      "completion_time": 0.000124
+    },
+    "visualization": {
+      "timestamp": "2025-09-25T15:54:12.939738",
+      "visualizations_created": [
+        "visualizations/overview_dashboard_20250925_155412.png",
+        "visualizations/statistical_distributions_20250925_155413.png",
+        "visualizations/correlation_analysis_20250925_155413.png",
+        "visualizations/trend_analysis_20250925_155413.png",
+        "visualizations/advanced_topic_analysis_20250925_155413.png",
+        "visualizations/comprehensive_network_20250925_155413.png",
+        "visualizations/impact_assessment_20250925_155413.png",
+        "visualizations/nlp_dashboard_20250925_155412.png",
+        "visualizations/interactive_dashboard_20250925_155412.html",
+        "visualizations/topics_wordcloud_20250925_155412.png",
+        "visualizations/summary_visualization_20250925_155418.png",
+        "visualizations/summary_visualization_20250925_155418.png"
+      ],
+      "dashboard_files": [
+        "visualizations/overview_dashboard_20250925_155412.png",
+        "visualizations/statistical_distributions_20250925_155413.png",
+        "visualizations/correlation_analysis_20250925_155413.png",
+        "visualizations/trend_analysis_20250925_155413.png",
+        "visualizations/advanced_topic_analysis_20250925_155413.png",
+        "visualizations/comprehensive_network_20250925_155413.png",
+        "visualizations/impact_assessment_20250925_155413.png",
+        "visualizations/nlp_dashboard_20250925_155412.png",
+        "visualizations/interactive_dashboard_20250925_155412.html",
+        "visualizations/topics_wordcloud_20250925_155412.png",
+        "visualizations/summary_visualization_20250925_155418.png"
+      ],
+      "summary_file": "visualizations/summary_visualization_20250925_155418.png",
+      "completion_time": 6.269258
+    }
+  },
+  "comprehensive_report": {
+    "generation_timestamp": "2025-09-25T15:54:12.939592",
+    "executive_summary": {
+      "corpus_size": 25,
+      "nlp_analyses_performed": 2,
+      "rag_components_analyzed": 0,
+      "total_analysis_time": 0,
+      "key_insights": [
+        "Primary research theme involves: data, activity, microbial"
+      ]
+    },
+    "detailed_findings": {
+      "top_topics": [
+        {
+          "topic_id": "topic_1",
+          "coherence": 0.6851250030496164,
+          "top_words": [
+            "data",
+            "activity",
+            "microbial",
+            "project",
+            "manual"
+          ]
+        },
+        {
+          "topic_id": "topic_0",
+          "coherence": 0.6824750313006529,
+          "top_words": [
+            "drug",
+            "gene",
+            "biology",
+            "multidrug resistant",
+            "multidrug"
+          ]
+        },
+        {
+          "topic_id": "topic_6",
+          "coherence": 0.6672783130089079,
+          "top_words": [
+            "gene",
+            "multi",
+            "database",
+            "binding",
+            "omics"
+          ]
+        },
+        {
+          "topic_id": "topic_7",
+          "coherence": 0.5860562351973542,
+          "top_words": [
+            "genes",
+            "sets",
+            "cell",
+            "cancer",
+            "cellular"
+          ]
+        },
+        {
+          "topic_id": "topic_3",
+          "coherence": 0.5705677373738383,
+          "top_words": [
+            "compounds",
+            "genes",
+            "promising",
+            "binding",
+            "progression"
+          ]
+        }
+      ],
+      "sentiment_overview": {
+        "mean_polarity": 0.09702947303144256,
+        "positive_ratio": 0.4583333333333333,
+        "negative_ratio": 0.0,
+        "neutral_ratio": 0.5416666666666666
+      },
+      "research_gaps": [],
+      "trend_analysis": {
+        "publication_trends": {},
+        "journal_trends": {},
+        "keyword_evolution": false
+      }
+    },
+    "recommendations": []
+  }
+}
