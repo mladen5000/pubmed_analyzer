@@ -74,3 +74,10 @@ class Paper:
         """Check if text file exists and is accessible"""
         import os
         return self.txt_path and os.path.exists(self.txt_path)
+
+    @property
+    def year(self) -> Optional[int]:
+        """Extract year from publication date"""
+        if self.pub_date:
+            return self.pub_date.year
+        return None

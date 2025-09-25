@@ -4,32 +4,43 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a **PubMed Analyzer** - a scientific literature analysis pipeline that combines full-text PDF processing, Retrieval-Augmented Generation (RAG), vector search, and advanced analytics for biomedical research. The project is a single-file Python application (`main.py`) that provides comprehensive analysis of PubMed research papers.
+This is a **PubMed Analyzer** - a modular scientific literature analysis pipeline that combines full-text PDF processing, Retrieval-Augmented Generation (RAG), vector search, and advanced analytics for biomedical research. The project features a clean modular architecture with separate components for search, PDF fetching, analysis, and utilities.
 
 ## Core Architecture
 
-The application is built around the `EnhancedPubMedAnalyzer` class which provides:
+The application is built around the `ModularPubMedPipeline` class in `main_new.py` which orchestrates:
 
-1. **Paper Search & Retrieval**: Searches PubMed using NCBI E-utilities API
-2. **Full-text Processing**: Downloads and processes PDFs using PyMuPDF, extracts sections
-3. **Vector Search**: Creates FAISS indices for semantic search using sentence transformers
-4. **RAG Integration**: Supports OpenAI and DeepSeek APIs for question-answering
+1. **Paper Search & Retrieval**: PubMed searches using NCBI E-utilities API
+2. **Full-text Processing**: Multi-strategy PDF downloads with robust error handling
+3. **Vector Search**: FAISS indices for semantic search using sentence transformers
+4. **RAG Integration**: OpenAI and DeepSeek API support for question-answering
 5. **Advanced Analytics**: Topic modeling, sentiment analysis, network analysis, visualizations
 
-### Key Components
+### Modular Components
 
-- **Data Storage**: Papers stored in memory, full-texts in `full_texts` dict, sections in `sections` dict
-- **Vector Indices**: FAISS indices for abstracts, full-text chunks, and paper sections
-- **Directory Structure**:
-  - `pdfs/`: Downloaded PDF files
-  - `sections/`: Extracted paper sections as JSON
-  - `vector_indices/`: FAISS indices and metadata
+- **`pubmed_analyzer/core/`**: Core functionality
+  - `search.py`: PubMedSearcher for paper discovery
+  - `id_converter.py`: PMID to PMC ID conversion
+  - `pdf_fetcher.py`: Multi-strategy PDF downloading with retry logic
+- **`pubmed_analyzer/models/`**: Data models
+  - `paper.py`: Paper data structure and metadata handling
+- **`pubmed_analyzer/utils/`**: Utilities
+  - `ncbi_client.py`: NCBI API client with rate limiting
+  - `validators.py`: PDF and data validation
+
+### Directory Structure
+
+- `pdfs/`: Downloaded PDF files
+- `sections/`: Extracted paper sections as JSON
+- `vector_indices/`: FAISS indices and metadata
+- `markdown/`: PDF to Markdown conversions
 
 ## Setup Requirements
 
 ### 1. Required Configuration
-**CRITICAL**: You must edit `main.py` and change the email address:
+**CRITICAL**: You must edit the email address when running the pipeline:
 ```python
+# In main_new.py or when initializing ModularPubMedPipeline
 EMAIL = "your.email@example.com"  # CHANGE THIS TO YOUR REAL EMAIL
 ```
 NCBI requires a valid email address for API access.
@@ -47,26 +58,33 @@ NCBI requires a valid email address for API access.
 # Install dependencies
 uv sync
 
-# Run the application
-uv run python main.py
+# Run the modular application
+uv run python main_new.py --query "your search terms" --max-papers 50
 
 # Alternative if virtual environment is activated
-python main.py
+python main_new.py --help
+
+# Available command-line arguments:
+# --query: PubMed search query
+# --max-papers: Maximum number of papers (default: 100)
+# --email: Email for NCBI API
+# --api-key: NCBI API key (optional)
 ```
 
-### 4. PDF Download Issues
-Even with proper setup, PDF downloads may fail with 403 errors because:
-- Many papers require institutional access
-- Publishers block automated downloads
-- Some papers aren't truly open access
+### 4. PDF Download Strategy
+The system uses a robust multi-strategy approach:
+- **Multiple URL patterns**: Tries 3 different URL formats per paper
+- **Exponential backoff**: 3 retry attempts with progressive delays
+- **Success rate enforcement**: Requires 30% minimum success rate
+- **Batch processing**: Downloads in batches of 5 with rate limiting
+- **Validation**: Checks file size and PDF headers
 
-The application will continue analysis using abstracts when PDFs aren't available.
+Even with this robust system, some PDFs may fail due to:
+- Institutional access requirements
+- Publisher blocking of automated downloads
+- Papers not being truly open access
 
-### Search Parameters
-Modify these variables in the `main()` function:
-- `SEARCH_QUERY`: PubMed search query
-- `MAX_PAPERS`: Maximum number of papers to analyze
-- `START_DATE`/`END_DATE`: Date range for search
+The application continues analysis using abstracts when PDFs aren't available.
 
 ## Key Dependencies
 
