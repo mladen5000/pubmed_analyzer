@@ -116,28 +116,34 @@ class ModularPubMedPipeline:
         logger.info("Step 2: Fetching paper metadata...")
         papers = await self.searcher.fetch_papers_metadata(pmids)
 
-        # Step 3: Convert to PMC IDs and check OA availability
-        logger.info("Step 3: Converting PMIDs to PMC IDs and checking Open Access...")
-        await self.id_converter.enrich_with_pmcids(papers)
-
-        # Count papers with full-text potential
-        fulltext_papers = [p for p in papers if p.has_fulltext]
-        logger.info(
-            f"Found {len(fulltext_papers)}/{len(papers)} papers with potential full-text access"
-        )
-
-        # Step 4: Download PDFs (optional)
+        # Step 3: Full-text processing (only if needed)
         if not self.skip_pdf_download:
+            logger.info("Step 3: Converting PMIDs to PMC IDs and checking Open Access...")
+            await self.id_converter.enrich_with_pmcids(papers)
+
+            # Count papers with full-text potential
+            fulltext_papers = [p for p in papers if p.has_fulltext]
+            logger.info(
+                f"Found {len(fulltext_papers)}/{len(papers)} papers with potential full-text access"
+            )
+
+            # Step 4: Download PDFs
             logger.info("Step 4: Downloading PDFs using unified fetcher...")
             await self.pdf_fetcher.download_all(papers)
         else:
-            logger.info("Step 4: Skipping PDF download (abstract-only mode)")
+            logger.info("Step 3-4: ⚡ PURE ABSTRACT MODE - No PMC conversion, no downloads needed!")
+            logger.info("📄 Ready for immediate analysis with abstracts")
 
         # Report final statistics
-        successful_downloads = sum(1 for p in papers if p.download_success)
-        logger.info(
-            f"✅ Core pipeline complete: {successful_downloads} PDFs downloaded successfully"
-        )
+        if not self.skip_pdf_download:
+            successful_downloads = sum(1 for p in papers if p.download_success)
+            logger.info(
+                f"✅ Core pipeline complete: {successful_downloads} PDFs downloaded successfully"
+            )
+        else:
+            logger.info(
+                f"✅ Abstract-only pipeline complete: {len(papers)} abstracts processed"
+            )
 
         # Prepare results dictionary
         results = {
@@ -226,29 +232,39 @@ class ModularPubMedPipeline:
     def get_analysis_summary(self, papers: List[Paper]) -> dict:
         """Generate summary statistics for the analysis"""
         total_papers = len(papers)
-        with_pmcids = sum(1 for p in papers if p.pmcid)
-        with_fulltext_potential = sum(1 for p in papers if p.has_fulltext)
-        downloaded_pdfs = sum(1 for p in papers if p.download_success)
-        extracted_text = sum(1 for p in papers if p.full_text)
+        with_abstracts = sum(1 for p in papers if getattr(p, 'abstract', None))
 
-        return {
-            "total_papers": total_papers,
-            "with_pmcids": with_pmcids,
-            "with_fulltext_potential": with_fulltext_potential,
-            "downloaded_pdfs": downloaded_pdfs,
-            "extracted_text": extracted_text,
-            "success_rates": {
-                "pmcid_conversion": (with_pmcids / total_papers) * 100
-                if total_papers > 0
-                else 0,
-                "pdf_download": (downloaded_pdfs / with_fulltext_potential) * 100
-                if with_fulltext_potential > 0
-                else 0,
-                "text_extraction": (extracted_text / downloaded_pdfs) * 100
-                if downloaded_pdfs > 0
-                else 0,
-            },
-        }
+        # Only calculate PDF-related stats if not in abstract-only mode
+        if not self.skip_pdf_download:
+            with_pmcids = sum(1 for p in papers if p.pmcid)
+            with_fulltext_potential = sum(1 for p in papers if p.has_fulltext)
+            downloaded_pdfs = sum(1 for p in papers if p.download_success)
+            extracted_text = sum(1 for p in papers if p.full_text)
+
+            return {
+                "total_papers": total_papers,
+                "with_abstracts": with_abstracts,
+                "with_pmcids": with_pmcids,
+                "with_fulltext_potential": with_fulltext_potential,
+                "downloaded_pdfs": downloaded_pdfs,
+                "extracted_text": extracted_text,
+                "mode": "full_paper",
+                "success_rates": {
+                    "abstract_coverage": (with_abstracts / total_papers) * 100 if total_papers > 0 else 0,
+                    "pmcid_conversion": (with_pmcids / total_papers) * 100 if total_papers > 0 else 0,
+                    "pdf_download": (downloaded_pdfs / with_fulltext_potential) * 100 if with_fulltext_potential > 0 else 0,
+                    "text_extraction": (extracted_text / downloaded_pdfs) * 100 if downloaded_pdfs > 0 else 0,
+                },
+            }
+        else:
+            return {
+                "total_papers": total_papers,
+                "with_abstracts": with_abstracts,
+                "mode": "abstract_only",
+                "success_rates": {
+                    "abstract_coverage": (with_abstracts / total_papers) * 100 if total_papers > 0 else 0,
+                },
+            }
 
 
 def parse_arguments():
@@ -358,15 +374,20 @@ async def main():
 
         logger.info("📊 Analysis Summary:")
         logger.info(f"   Total papers: {summary['total_papers']}")
-        logger.info(
-            f"   PMC IDs found: {summary['with_pmcids']} ({summary['success_rates']['pmcid_conversion']:.1f}%)"
-        )
-        logger.info(
-            f"   PDFs downloaded: {summary['downloaded_pdfs']} ({summary['success_rates']['pdf_download']:.1f}%)"
-        )
-        logger.info(
-            f"   Text extracted: {summary['extracted_text']} ({summary['success_rates']['text_extraction']:.1f}%)"
-        )
+        logger.info(f"   With abstracts: {summary['with_abstracts']} ({summary['success_rates']['abstract_coverage']:.1f}%)")
+
+        if summary['mode'] == 'full_paper':
+            logger.info(
+                f"   PMC IDs found: {summary['with_pmcids']} ({summary['success_rates']['pmcid_conversion']:.1f}%)"
+            )
+            logger.info(
+                f"   PDFs downloaded: {summary['downloaded_pdfs']} ({summary['success_rates']['pdf_download']:.1f}%)"
+            )
+            logger.info(
+                f"   Text extracted: {summary['extracted_text']} ({summary['success_rates']['text_extraction']:.1f}%)"
+            )
+        else:
+            logger.info(f"   Mode: Pure abstract analysis (no downloads)")
 
         # Report LLM analysis results
         if results["llm_analysis"] and not results["llm_analysis"].get("error"):

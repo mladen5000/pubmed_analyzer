@@ -17,10 +17,11 @@ class PMIDToPMCConverter:
     def __init__(self, email: str, api_key: Optional[str] = None):
         self.email = email
         self.api_key = api_key
+        self._conversion_cache = {}  # Simple in-memory cache
 
     async def enrich_with_pmcids(self, papers: List[Paper], batch_size: int = None) -> None:
         """
-        Enrich papers with PMC IDs and OA availability information
+        FAST bulk PMC ID conversion using optimized NCBI ID Converter API
 
         Args:
             papers: List of Paper objects to enrich
@@ -29,34 +30,141 @@ class PMIDToPMCConverter:
         if not papers:
             return
 
-        # Optimize batch size based on API key and total papers
+        # Use much larger batch sizes for the optimized approach
         if batch_size is None:
             if self.api_key:
-                batch_size = min(10, max(3, len(papers) // 10))  # Smaller batches with API key
+                batch_size = min(200, max(100, len(papers)))  # Much larger batches with API key
             else:
-                batch_size = min(5, max(2, len(papers) // 20))   # Very small batches without API key
+                batch_size = min(100, max(50, len(papers)))   # Still large batches without API key
 
-        logger.info(f"Processing {len(papers)} papers in batches of {batch_size} for PMC ID conversion")
+        logger.info(f"🚀 FAST PMC conversion: {len(papers)} papers in batches of {batch_size}")
 
         async with NCBIClient(self.email, self.api_key) as client:
-            # Process papers in small batches with delays and progress tracking
-            total_batches = (len(papers) + batch_size - 1) // batch_size
-
             with tqdm(total=len(papers), desc="Converting PMIDs to PMC IDs", unit="paper") as pbar:
                 for i in range(0, len(papers), batch_size):
                     batch = papers[i : i + batch_size]
-                    batch_num = i // batch_size + 1
 
-                    logger.debug(f"Processing PMC ID batch {batch_num}/{total_batches}")
-
-                    await self._process_batch(client, batch)
+                    await self._bulk_convert_batch(client, batch)
                     pbar.update(len(batch))
 
-                    # Add delay between batches to avoid rate limits
+                    # Minimal delay between batches
                     if i + batch_size < len(papers):
-                        delay = 2.0 if not self.api_key else 1.0
-                        logger.debug(f"Waiting {delay}s between PMC ID conversion batches...")
+                        delay = 0.2 if self.api_key else 0.5  # Much shorter delays
                         await asyncio.sleep(delay)
+
+    async def _bulk_convert_batch(self, client: NCBIClient, papers: List[Paper]) -> None:
+        """Bulk convert a batch of papers using NCBI ID Converter API"""
+        try:
+            # Check cache first and extract uncached PMIDs
+            pmids_to_convert = []
+            for paper in papers:
+                if paper.clean_pmid:
+                    if paper.clean_pmid in self._conversion_cache:
+                        # Use cached result
+                        pmcid = self._conversion_cache[paper.clean_pmid]
+                        if pmcid:
+                            paper.pmcid = pmcid
+                            paper.has_fulltext = True
+                    else:
+                        pmids_to_convert.append(paper.clean_pmid)
+
+            if not pmids_to_convert:
+                return  # All were cached
+
+            # Use NCBI ID Converter API for bulk conversion (much faster)
+            pmid_to_pmcid = await self._bulk_pmid_to_pmcid_conversion(client, pmids_to_convert)
+
+            # Apply conversions to papers and update cache
+            for paper in papers:
+                if paper.clean_pmid in pmid_to_pmcid:
+                    pmcid = pmid_to_pmcid[paper.clean_pmid]
+                    # Cache the result (including None for no conversion)
+                    self._conversion_cache[paper.clean_pmid] = pmcid
+
+                    if pmcid:
+                        paper.pmcid = pmcid
+                        paper.has_fulltext = True  # Assume PMC papers have full text
+                elif paper.clean_pmid in pmids_to_convert:
+                    # Cache negative result
+                    self._conversion_cache[paper.clean_pmid] = None
+
+        except Exception as e:
+            logger.error(f"Bulk conversion failed, falling back to individual conversion: {e}")
+            # Fallback to old method for this batch only
+            await self._process_batch_fallback(client, papers)
+
+    async def _bulk_pmid_to_pmcid_conversion(self, client: NCBIClient, pmids: List[str]) -> dict:
+        """
+        Use NCBI ID Converter API for bulk PMID to PMC conversion
+        This is MUCH faster than individual elink calls
+        """
+        if not pmids:
+            return {}
+
+        try:
+            # Join PMIDs for bulk query
+            pmid_string = ",".join(pmids)
+
+            # Use the ID Converter API endpoint - much faster for bulk operations
+            url = "https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/"
+            params = {
+                'tool': 'PubMedAnalyzer',
+                'email': self.email,
+                'ids': pmid_string,
+                'format': 'json',
+                'versions': 'no'
+            }
+
+            if self.api_key:
+                params['api_key'] = self.api_key
+
+            response = await client.session.get(url, params=params)
+
+            if response.status == 200:
+                data = await response.json()
+
+                # Parse the conversion results
+                pmid_to_pmcid = {}
+
+                if 'records' in data:
+                    for record in data['records']:
+                        pmid = record.get('pmid')
+                        pmcid = record.get('pmcid')
+
+                        if pmid and pmcid:
+                            # Clean up PMC ID format
+                            if pmcid.startswith('PMC'):
+                                pmid_to_pmcid[pmid] = pmcid
+                            else:
+                                pmid_to_pmcid[pmid] = f'PMC{pmcid}'
+
+                logger.debug(f"Bulk converted {len(pmid_to_pmcid)}/{len(pmids)} PMIDs to PMC IDs")
+                return pmid_to_pmcid
+
+            else:
+                logger.warning(f"ID Converter API returned status {response.status}")
+                return {}
+
+        except Exception as e:
+            logger.error(f"Bulk PMID to PMC conversion failed: {e}")
+            return {}
+
+    async def _process_batch_fallback(self, client: NCBIClient, papers: List[Paper]) -> None:
+        """Fallback to the old sequential method if bulk conversion fails"""
+        for paper in papers:
+            try:
+                if not paper.pmcid:
+                    paper.pmcid = await self._convert_pmid_to_pmcid(client, paper.clean_pmid)
+
+                if paper.pmcid:
+                    paper.has_fulltext = True
+
+                # Very small delay for fallback
+                await asyncio.sleep(0.1)
+
+            except Exception as e:
+                logger.error(f"Failed to enrich paper {paper.pmid}: {e}")
+                paper.error_message = str(e)
 
     async def _process_batch(self, client: NCBIClient, papers: List[Paper]) -> None:
         """Process a batch of papers for PMC ID conversion with sequential processing"""

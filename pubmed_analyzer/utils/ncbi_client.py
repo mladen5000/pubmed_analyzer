@@ -72,6 +72,7 @@ class NCBIClient:
 
             if self.api_key:
                 params['api_key'] = self.api_key
+                logger.debug(f"Using API key: {self.api_key[:10]}...")
 
             url = self.BASE_URL + endpoint
 
@@ -183,13 +184,14 @@ class NCBIClient:
 
         return data.get('esearchresult', {})
 
-    async def fetch_metadata(self, pmids: list, retmode: str = 'xml') -> aiohttp.ClientResponse:
+    async def fetch_metadata(self, pmids: list, retmode: str = 'xml', rettype: str = 'abstract') -> aiohttp.ClientResponse:
         """
-        Fetch metadata for multiple PMIDs using efetch
+        Fetch metadata for multiple PMIDs using efetch with optimized parameters for abstract retrieval
 
         Args:
             pmids: List of PubMed IDs
             retmode: Return format ('xml', 'json', etc.)
+            rettype: Return type - 'abstract' for maximum abstract coverage
 
         Returns:
             Response containing metadata
@@ -202,13 +204,213 @@ class NCBIClient:
             logger.warning(f"Truncating {len(pmids)} PMIDs to 200 for single request")
             pmids = pmids[:200]
 
+        # Enhanced parameters for maximum abstract retrieval
         params = {
             'db': 'pubmed',
             'id': ','.join(str(pmid) for pmid in pmids),
-            'retmode': retmode
+            'retmode': retmode,
+            'rettype': rettype,  # Focus on abstracts
+            'version': '2.0',    # Use latest API version for better coverage
         }
 
         return await self.make_request('efetch.fcgi', params)
+
+    async def fetch_metadata_with_fallbacks(self, pmids: list) -> aiohttp.ClientResponse:
+        """
+        Fetch metadata with multiple database fallbacks for maximum abstract coverage
+
+        This method tries multiple strategies:
+        1. Standard PubMed with abstract focus
+        2. Medline database (contains some abstracts not in PubMed)
+        3. PMC database for open access papers
+        4. Alternative rettype parameters
+
+        Args:
+            pmids: List of PubMed IDs
+
+        Returns:
+            Response with maximum possible abstract coverage
+        """
+        if not pmids:
+            raise ValueError("No PMIDs provided")
+
+        # Strategy 1: Enhanced PubMed query (our main approach)
+        try:
+            return await self.fetch_metadata(pmids, retmode='xml', rettype='abstract')
+        except Exception as e:
+            logger.warning(f"Primary abstract fetch failed: {e}, trying fallbacks")
+
+        # Strategy 2: Try medline database (sometimes has abstracts PubMed doesn't)
+        try:
+            params = {
+                'db': 'medline',
+                'id': ','.join(str(pmid) for pmid in pmids),
+                'retmode': 'xml',
+                'rettype': 'medline',
+                'version': '2.0'
+            }
+            response = await self.make_request('efetch.fcgi', params)
+            logger.info("Used Medline database as fallback")
+            return response
+        except Exception as e:
+            logger.warning(f"Medline fallback failed: {e}")
+
+        # Strategy 3: Fall back to standard parameters without rettype
+        try:
+            params = {
+                'db': 'pubmed',
+                'id': ','.join(str(pmid) for pmid in pmids),
+                'retmode': 'xml',
+                'version': '2.0'
+            }
+            response = await self.make_request('efetch.fcgi', params)
+            logger.info("Used standard PubMed query as final fallback")
+            return response
+        except Exception as e:
+            logger.error(f"All fallback strategies failed: {e}")
+            raise
+
+    async def fetch_missing_abstracts(self, pmids_without_abstracts: list) -> Dict[str, str]:
+        """
+        Specialized method to fetch abstracts for PMIDs that initially had no abstract
+        Uses multiple targeted strategies for maximum recovery
+
+        Args:
+            pmids_without_abstracts: List of PMIDs that need abstract retrieval
+
+        Returns:
+            Dict mapping PMID to recovered abstract text
+        """
+        recovered_abstracts = {}
+
+        if not pmids_without_abstracts:
+            return recovered_abstracts
+
+        logger.info(f"Attempting to recover {len(pmids_without_abstracts)} missing abstracts")
+
+        # Strategy 1: Query PMC database (may have abstracts for open access papers)
+        pmc_abstracts = await self._fetch_from_pmc(pmids_without_abstracts)
+        recovered_abstracts.update(pmc_abstracts)
+
+        # Strategy 2: Try individual PMID queries (sometimes batch failures mask individual successes)
+        remaining_pmids = [pmid for pmid in pmids_without_abstracts if pmid not in recovered_abstracts]
+        if remaining_pmids:
+            individual_abstracts = await self._fetch_individual_abstracts(remaining_pmids)
+            recovered_abstracts.update(individual_abstracts)
+
+        # Strategy 3: Try different rettype parameters
+        still_remaining = [pmid for pmid in pmids_without_abstracts if pmid not in recovered_abstracts]
+        if still_remaining:
+            alt_abstracts = await self._fetch_with_alternative_rettypes(still_remaining)
+            recovered_abstracts.update(alt_abstracts)
+
+        logger.info(f"Recovered {len(recovered_abstracts)} abstracts from {len(pmids_without_abstracts)} missing")
+        return recovered_abstracts
+
+    async def _fetch_from_pmc(self, pmids: list) -> Dict[str, str]:
+        """Try to fetch abstracts from PMC database"""
+        abstracts = {}
+        try:
+            # Convert PMIDs to PMC IDs and try fetching from PMC
+            for pmid in pmids[:10]:  # Limit to avoid overwhelming PMC
+                try:
+                    params = {
+                        'dbfrom': 'pubmed',
+                        'db': 'pmc',
+                        'id': pmid,
+                        'retmode': 'xml'
+                    }
+                    response = await self.make_request('efetch.fcgi', params)
+                    xml_content = await response.text()
+
+                    # Simple extraction - could be enhanced
+                    if '<abstract' in xml_content.lower():
+                        # Extract abstract text (simplified)
+                        import re
+                        abstract_match = re.search(r'<abstract[^>]*>(.*?)</abstract>', xml_content, re.DOTALL | re.IGNORECASE)
+                        if abstract_match:
+                            abstracts[pmid] = abstract_match.group(1).strip()
+
+                except Exception as e:
+                    logger.debug(f"PMC fetch failed for PMID {pmid}: {e}")
+                    continue
+
+        except Exception as e:
+            logger.warning(f"PMC fallback strategy failed: {e}")
+
+        return abstracts
+
+    async def _fetch_individual_abstracts(self, pmids: list) -> Dict[str, str]:
+        """Try fetching abstracts one by one (sometimes batch failures hide individual successes)"""
+        abstracts = {}
+
+        # Only try this for a reasonable number to avoid excessive API calls
+        for pmid in pmids[:20]:  # Limit to first 20
+            try:
+                response = await self.fetch_metadata([pmid], retmode='xml', rettype='abstract')
+                xml_content = await response.text()
+
+                # Quick abstract extraction
+                if '<AbstractText' in xml_content:
+                    import re
+                    abstract_matches = re.findall(r'<AbstractText[^>]*>(.*?)</AbstractText>', xml_content, re.DOTALL)
+                    if abstract_matches:
+                        abstracts[pmid] = ' '.join(abstract_matches).strip()
+
+            except Exception as e:
+                logger.debug(f"Individual fetch failed for PMID {pmid}: {e}")
+                continue
+
+        return abstracts
+
+    async def _fetch_with_alternative_rettypes(self, pmids: list) -> Dict[str, str]:
+        """Try alternative rettype parameters"""
+        abstracts = {}
+
+        # Try different rettype values that might yield abstracts
+        alt_rettypes = ['medline', 'full', None]  # None means no rettype parameter
+
+        for rettype in alt_rettypes:
+            try:
+                params = {
+                    'db': 'pubmed',
+                    'id': ','.join(pmids[:50]),  # Limit batch size
+                    'retmode': 'xml',
+                    'version': '2.0'
+                }
+
+                if rettype:
+                    params['rettype'] = rettype
+
+                response = await self.make_request('efetch.fcgi', params)
+                xml_content = await response.text()
+
+                # Extract any abstracts found
+                if '<AbstractText' in xml_content:
+                    import xml.etree.ElementTree as ET
+                    try:
+                        root = ET.fromstring(xml_content)
+                        for article in root.findall('.//PubmedArticle'):
+                            pmid_elem = article.find('.//PMID')
+                            if pmid_elem is not None:
+                                pmid = pmid_elem.text
+                                abstract_texts = []
+                                for abstract_elem in article.findall('.//AbstractText'):
+                                    if abstract_elem.text:
+                                        abstract_texts.append(abstract_elem.text)
+                                if abstract_texts:
+                                    abstracts[pmid] = ' '.join(abstract_texts)
+                    except ET.ParseError:
+                        pass
+
+                if abstracts:  # If we found some, we can stop
+                    break
+
+            except Exception as e:
+                logger.debug(f"Alternative rettype {rettype} failed: {e}")
+                continue
+
+        return abstracts
 
     async def convert_pmid_to_pmcid(self, pmid: str) -> Optional[str]:
         """

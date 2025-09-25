@@ -258,7 +258,7 @@ class AdvancedNLPAnalyzer:
                     "label": ent.label_,
                     "start": ent.start_char,
                     "end": ent.end_char,
-                    "confidence": float(ent._.get("confidence", 1.0))
+                    "confidence": float(getattr(ent._, "confidence", 1.0))
                 }
                 doc_entities.append(entity_info)
 

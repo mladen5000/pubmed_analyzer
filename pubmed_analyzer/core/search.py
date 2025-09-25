@@ -1,6 +1,7 @@
 import xml.etree.ElementTree as ET
 import logging
 import asyncio
+import re
 from datetime import datetime
 from typing import List, Dict, Any, Optional
 from tqdm import tqdm
@@ -56,14 +57,14 @@ class PubMedSearcher:
 
     async def fetch_papers_metadata(self, pmids: List[str], batch_size: int = None) -> List[Paper]:
         """
-        Fetch paper metadata from PubMed for multiple PMIDs with optimized batching
+        Fetch paper metadata from PubMed for multiple PMIDs with optimized batching and abstract recovery
 
         Args:
             pmids: List of PubMed IDs
             batch_size: Number of papers to fetch in each batch (auto-optimized if None)
 
         Returns:
-            List of Paper objects with metadata
+            List of Paper objects with metadata and maximum abstract coverage
         """
         if not pmids:
             return []
@@ -80,33 +81,129 @@ class PubMedSearcher:
         logger.info(f"Using optimized batch size: {batch_size} (API key: {'✅' if self.api_key else '❌'})")
 
         papers = []
+        pmids_needing_recovery = []
 
         async with NCBIClient(self.email, self.api_key) as client:
-            # Process in batches to stay within NCBI limits
+            # Phase 1: Primary metadata fetch with enhanced parameters
             for i in tqdm(range(0, len(pmids), batch_size), desc="Fetching metadata"):
                 batch = pmids[i : i + batch_size]
 
                 try:
-                    response = await client.fetch_metadata(batch, retmode='xml')
+                    # Use enhanced fetch with abstract focus
+                    response = await client.fetch_metadata(batch, retmode='xml', rettype='abstract')
                     xml_content = await response.text()
 
                     # Parse XML response
                     batch_papers = self._parse_pubmed_xml(xml_content)
                     papers.extend(batch_papers)
 
+                    # Track PMIDs without abstracts for recovery
+                    for paper in batch_papers:
+                        if not paper.abstract or paper.abstract.strip() == "":
+                            pmids_needing_recovery.append(paper.pmid)
+
                     # Add small delay between batches for courtesy
                     if i + batch_size < len(pmids):
-                        delay = 0.5 if self.api_key else 1.0
+                        delay = 0.3 if self.api_key else 0.7  # Slightly faster for abstract focus
                         await asyncio.sleep(delay)
 
                 except Exception as e:
                     logger.error(f"Failed to fetch metadata for batch {i}-{i+len(batch)}: {e}")
-                    # Create minimal Paper objects for failed fetches
-                    for pmid in batch:
-                        papers.append(Paper(pmid=pmid, error_message=str(e)))
+                    # Try fallback method for this batch
+                    try:
+                        response = await client.fetch_metadata_with_fallbacks(batch)
+                        xml_content = await response.text()
+                        batch_papers = self._parse_pubmed_xml(xml_content)
+                        papers.extend(batch_papers)
+
+                        # Still track missing abstracts
+                        for paper in batch_papers:
+                            if not paper.abstract or paper.abstract.strip() == "":
+                                pmids_needing_recovery.append(paper.pmid)
+                    except Exception as fallback_error:
+                        logger.error(f"Fallback also failed for batch {i}-{i+len(batch)}: {fallback_error}")
+                        # Create minimal Paper objects for failed fetches
+                        for pmid in batch:
+                            papers.append(Paper(pmid=pmid, error_message=str(e)))
+                            pmids_needing_recovery.append(pmid)
+
+            # Phase 2: Abstract recovery for missing abstracts
+            initial_abstract_count = sum(1 for paper in papers if paper.abstract and paper.abstract.strip())
+            logger.info(f"Initial abstract coverage: {initial_abstract_count}/{len(papers)} ({initial_abstract_count/len(papers)*100:.1f}%)")
+
+            if pmids_needing_recovery:
+                logger.info(f"Attempting to recover {len(pmids_needing_recovery)} missing abstracts")
+
+                # Use specialized recovery methods
+                recovered_abstracts = await client.fetch_missing_abstracts(pmids_needing_recovery)
+
+                # Update papers with recovered abstracts
+                recovered_count = 0
+                for paper in papers:
+                    if paper.pmid in recovered_abstracts:
+                        paper.abstract = recovered_abstracts[paper.pmid]
+                        recovered_count += 1
+
+                final_abstract_count = sum(1 for paper in papers if paper.abstract and paper.abstract.strip())
+                logger.info(f"Recovered {recovered_count} abstracts. Final coverage: {final_abstract_count}/{len(papers)} ({final_abstract_count/len(papers)*100:.1f}%)")
 
         logger.info(f"Successfully fetched metadata for {len(papers)} papers")
         return papers
+
+    def get_abstract_coverage_stats(self, papers: List[Paper]) -> Dict[str, Any]:
+        """
+        Get detailed statistics about abstract coverage for analysis and optimization
+
+        Args:
+            papers: List of Paper objects
+
+        Returns:
+            Dict containing coverage statistics
+        """
+        total_papers = len(papers)
+        papers_with_abstracts = sum(1 for paper in papers if paper.abstract and paper.abstract.strip())
+        papers_without_abstracts = total_papers - papers_with_abstracts
+
+        # Analyze abstract lengths
+        abstract_lengths = [len(paper.abstract) for paper in papers if paper.abstract]
+        avg_abstract_length = sum(abstract_lengths) / len(abstract_lengths) if abstract_lengths else 0
+
+        # Identify common patterns in missing abstracts
+        missing_patterns = {
+            'error_messages': sum(1 for paper in papers if paper.error_message),
+            'older_papers': 0,  # Could add date analysis
+            'specific_journals': {},  # Could analyze by journal
+        }
+
+        return {
+            'total_papers': total_papers,
+            'papers_with_abstracts': papers_with_abstracts,
+            'papers_without_abstracts': papers_without_abstracts,
+            'coverage_percentage': (papers_with_abstracts / total_papers * 100) if total_papers > 0 else 0,
+            'average_abstract_length': avg_abstract_length,
+            'missing_patterns': missing_patterns,
+            'optimization_suggestions': self._get_optimization_suggestions(papers)
+        }
+
+    def _get_optimization_suggestions(self, papers: List[Paper]) -> List[str]:
+        """Generate suggestions for improving abstract coverage"""
+        suggestions = []
+
+        papers_without_abstracts = [p for p in papers if not p.abstract or not p.abstract.strip()]
+        error_papers = [p for p in papers if p.error_message]
+
+        if len(papers_without_abstracts) > 0:
+            suggestions.append(f"Consider using fallback databases for {len(papers_without_abstracts)} papers without abstracts")
+
+        if len(error_papers) > 0:
+            suggestions.append(f"Retry failed requests for {len(error_papers)} papers with errors")
+
+        # Check if we should use more aggressive recovery
+        coverage = sum(1 for p in papers if p.abstract and p.abstract.strip()) / len(papers) * 100
+        if coverage < 98:
+            suggestions.append("Use individual PMID queries for remaining missing abstracts")
+
+        return suggestions
 
     def _parse_pubmed_xml(self, xml_content: str) -> List[Paper]:
         """
@@ -158,17 +255,68 @@ class PubMedSearcher:
         title_elem = citation.find(".//ArticleTitle")
         title = title_elem.text if title_elem is not None else None
 
-        # Abstract
+        # Enhanced Abstract parsing - handles multiple formats and edge cases
         abstract_parts = []
+
+        # Strategy 1: Look for AbstractText elements (most common)
         for abstract_elem in citation.findall(".//AbstractText"):
             text = abstract_elem.text or ""
-            # Handle structured abstracts
-            label = abstract_elem.get("Label", "")
-            if label:
-                text = f"{label}: {text}"
-            abstract_parts.append(text)
 
-        abstract = " ".join(abstract_parts) if abstract_parts else None
+            # Handle nested elements (like <i>, <b>, etc.) by getting all text
+            if not text and len(abstract_elem):
+                text = "".join(abstract_elem.itertext())
+
+            if text.strip():
+                # Handle structured abstracts with labels
+                label = abstract_elem.get("Label", "")
+                if label:
+                    text = f"{label}: {text}"
+                abstract_parts.append(text.strip())
+
+        # Strategy 2: If no AbstractText, try Abstract element directly
+        if not abstract_parts:
+            abstract_elem = citation.find(".//Abstract")
+            if abstract_elem is not None:
+                # Get all text including nested elements
+                text = "".join(abstract_elem.itertext()).strip()
+                if text:
+                    abstract_parts.append(text)
+
+        # Strategy 3: Look for OtherAbstract (for translated abstracts, author abstracts)
+        if not abstract_parts:
+            for other_abstract in citation.findall(".//OtherAbstract"):
+                text = "".join(other_abstract.itertext()).strip()
+                if text:
+                    abstract_type = other_abstract.get("Type", "Other")
+                    abstract_parts.append(f"[{abstract_type}] {text}")
+
+        # Strategy 4: Check Article element directly for any abstract content
+        if not abstract_parts:
+            # Sometimes abstracts are in unexpected locations
+            article_text = "".join(citation.itertext())
+            # Look for common abstract patterns
+            abstract_patterns = [
+                r'Abstract[:\s]+(.*?)(?:Keywords|Introduction|Background|Methods|PMID|$)',
+                r'Summary[:\s]+(.*?)(?:Keywords|Introduction|Background|Methods|PMID|$)',
+            ]
+            for pattern in abstract_patterns:
+                match = re.search(pattern, article_text, re.IGNORECASE | re.DOTALL)
+                if match and len(match.group(1).strip()) > 50:  # Reasonable abstract length
+                    abstract_parts.append(match.group(1).strip()[:1000])  # Limit length
+                    break
+
+        # Clean and combine abstract parts
+        if abstract_parts:
+            abstract = " ".join(abstract_parts)
+            # Clean up common XML artifacts
+            abstract = re.sub(r'\s+', ' ', abstract)  # Normalize whitespace
+            abstract = abstract.strip()
+
+            # Validate abstract quality
+            if len(abstract) < 20:  # Too short to be meaningful
+                abstract = None
+        else:
+            abstract = None
 
         # Authors
         authors = []
