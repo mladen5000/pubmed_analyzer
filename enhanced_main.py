@@ -33,6 +33,7 @@ from pubmed_analyzer import (
 # Import new advanced modules
 from pubmed_analyzer.core.nlp_analyzer import AdvancedNLPAnalyzer
 from pubmed_analyzer.core.rag_analyzer import EnhancedRAGAnalyzer
+from pubmed_analyzer.utils.visualizer import EnhancedVisualizer
 
 
 class EnhancedPubMedPipeline:
@@ -58,6 +59,7 @@ class EnhancedPubMedPipeline:
         # Initialize advanced analysis components
         self.nlp_analyzer = AdvancedNLPAnalyzer()
         self.rag_analyzer = EnhancedRAGAnalyzer(openai_key, deepseek_key)
+        self.visualizer = EnhancedVisualizer()
 
         logger.info("🚀 Enhanced PubMed Pipeline initialized")
         logger.info(f"   Email: {email}")
@@ -76,6 +78,7 @@ class EnhancedPubMedPipeline:
         end_date: Optional[str] = None,
         enable_rag: bool = True,
         custom_questions: Optional[List[str]] = None,
+        enable_visualizations: bool = True,
     ) -> Dict[str, Any]:
         """Run comprehensive analysis pipeline with all features"""
 
@@ -84,6 +87,7 @@ class EnhancedPubMedPipeline:
         logger.info(f"   Query: '{query}'")
         logger.info(f"   Max papers: {max_papers}")
         logger.info(f"   RAG enabled: {enable_rag}")
+        logger.info(f"   Visualizations enabled: {enable_visualizations}")
 
         results = {
             "pipeline_info": {
@@ -93,6 +97,7 @@ class EnhancedPubMedPipeline:
                 "end_date": end_date,
                 "analysis_timestamp": analysis_start.isoformat(),
                 "rag_enabled": enable_rag,
+                "visualizations_enabled": enable_visualizations,
             },
             "phases": {}
         }
@@ -140,6 +145,16 @@ class EnhancedPubMedPipeline:
             results["phases"]["reporting"] = {
                 "completion_time": (datetime.now() - phase4_start).total_seconds()
             }
+
+            # Phase 5: Create Visualizations (if enabled)
+            if enable_visualizations:
+                logger.info("\n🎨 PHASE 5: VISUALIZATION GENERATION")
+                phase5_start = datetime.now()
+                viz_results = await self._visualization_phase(results, query)
+                results["phases"]["visualization"] = {
+                    **viz_results,
+                    "completion_time": (datetime.now() - phase5_start).total_seconds()
+                }
 
             # Save results
             await self._save_results(results, query)
@@ -309,6 +324,42 @@ class EnhancedPubMedPipeline:
             rag_results["error"] = str(e)
 
         return rag_results
+
+    async def _visualization_phase(self, results: Dict[str, Any], query: str) -> Dict[str, Any]:
+        """Phase 5: Generate comprehensive visualizations"""
+
+        viz_results = {
+            "timestamp": datetime.now().isoformat(),
+            "visualizations_created": []
+        }
+
+        try:
+            # 1. Create comprehensive dashboard
+            logger.info("🎯 Creating comprehensive visualization dashboard...")
+            dashboard_files = self.visualizer.create_comprehensive_dashboard(results, query)
+            viz_results["dashboard_files"] = dashboard_files
+            viz_results["visualizations_created"].extend(dashboard_files)
+
+            # 2. Create summary visualization for quick overview
+            logger.info("📊 Creating summary visualization...")
+            summary_file = self.visualizer.create_summary_visualization(results, query)
+            if summary_file:
+                viz_results["summary_file"] = summary_file
+                viz_results["visualizations_created"].append(summary_file)
+
+            logger.info(f"✅ Generated {len(viz_results['visualizations_created'])} visualization files")
+
+            # Log visualization files for user
+            if viz_results["visualizations_created"]:
+                logger.info("📁 Generated visualization files:")
+                for file_path in viz_results["visualizations_created"]:
+                    logger.info(f"   • {file_path}")
+
+        except Exception as e:
+            logger.error(f"❌ Visualization phase failed: {e}")
+            viz_results["error"] = str(e)
+
+        return viz_results
 
     def _generate_comprehensive_report(self, results: Dict[str, Any], papers_data: List[Dict]) -> Dict[str, Any]:
         """Generate comprehensive analysis report"""
@@ -526,6 +577,10 @@ def parse_arguments():
     parser.add_argument(
         "--custom-questions", nargs="+", help="Custom questions for RAG analysis"
     )
+    parser.add_argument(
+        "--disable-visualizations", action="store_true",
+        help="Disable visualization generation phase"
+    )
 
     return parser.parse_args()
 
@@ -554,6 +609,7 @@ async def main():
             end_date=args.end_date,
             enable_rag=not args.disable_rag,
             custom_questions=args.custom_questions,
+            enable_visualizations=not args.disable_visualizations,
         )
 
         # Print summary
@@ -566,6 +622,13 @@ async def main():
             logger.info(f"📚 Papers analyzed: {summary.get('corpus_size', 0)}")
             logger.info(f"🧠 NLP analyses: {summary.get('nlp_analyses_performed', 0)}")
             logger.info(f"🤖 RAG components: {summary.get('rag_components_analyzed', 0)}")
+
+            # Show visualization info if available
+            viz_phase = results.get("phases", {}).get("visualization", {})
+            if viz_phase and not viz_phase.get("error"):
+                viz_count = len(viz_phase.get("visualizations_created", []))
+                logger.info(f"🎨 Visualizations: {viz_count} files generated")
+
             logger.info(f"⏱️  Total time: {summary.get('total_analysis_time', 0):.1f}s")
 
             insights = summary.get("key_insights", [])

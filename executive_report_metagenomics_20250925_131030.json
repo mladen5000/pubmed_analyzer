@@ -1,0 +1,84 @@
+{
+  "generation_timestamp": "2025-09-25T13:10:30.562053",
+  "executive_summary": {
+    "corpus_size": 50,
+    "nlp_analyses_performed": 2,
+    "rag_components_analyzed": 0,
+    "total_analysis_time": 0,
+    "key_insights": [
+      "Primary research theme involves: microbial, human, gut"
+    ]
+  },
+  "detailed_findings": {
+    "top_topics": [
+      {
+        "topic_id": "topic_6",
+        "coherence": 1.31876917632457,
+        "top_words": [
+          "microbial",
+          "human",
+          "gut",
+          "composition",
+          "taxonomic"
+        ]
+      },
+      {
+        "topic_id": "topic_1",
+        "coherence": 1.1726469400196673,
+        "top_words": [
+          "severe",
+          "pneumonia",
+          "et",
+          "al",
+          "et al"
+        ]
+      },
+      {
+        "topic_id": "topic_4",
+        "coherence": 0.8542115095480124,
+        "top_words": [
+          "studies",
+          "resistance",
+          "revealed",
+          "environmental",
+          "associated"
+        ]
+      },
+      {
+        "topic_id": "topic_3",
+        "coherence": 0.8070960108490924,
+        "top_words": [
+          "rice",
+          "oscc",
+          "oral",
+          "recurrence",
+          "removal"
+        ]
+      },
+      {
+        "topic_id": "topic_0",
+        "coherence": 0.7482200606223739,
+        "top_words": [
+          "cycling",
+          "microbial",
+          "viruses",
+          "functional genes",
+          "communities"
+        ]
+      }
+    ],
+    "sentiment_overview": {
+      "mean_polarity": 0.07308801623663834,
+      "positive_ratio": 0.41509433962264153,
+      "negative_ratio": 0.03773584905660377,
+      "neutral_ratio": 0.5471698113207547
+    },
+    "research_gaps": [],
+    "trend_analysis": {
+      "publication_trends": {},
+      "journal_trends": {},
+      "keyword_evolution": false
+    }
+  },
+  "recommendations": []
+}

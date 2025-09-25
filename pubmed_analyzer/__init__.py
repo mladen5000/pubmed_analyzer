@@ -12,9 +12,10 @@ from .core.rag_analyzer import EnhancedRAGAnalyzer
 from .models.paper import Paper
 from .utils.ncbi_client import NCBIClient
 from .utils.validators import PDFValidator
+from .utils.visualizer import EnhancedVisualizer
 
-__version__ = "2.0.0"
-__author__ = "Enhanced with advanced NLP/ML and RAG capabilities"
+__version__ = "2.1.0"
+__author__ = "Enhanced with advanced NLP/ML, RAG, and comprehensive visualizations"
 
 __all__ = [
     'PubMedSearcher',
@@ -24,5 +25,6 @@ __all__ = [
     'EnhancedRAGAnalyzer',
     'Paper',
     'NCBIClient',
-    'PDFValidator'
+    'PDFValidator',
+    'EnhancedVisualizer'
 ]
