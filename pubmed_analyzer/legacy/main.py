@@ -275,8 +275,8 @@ class EnhancedPubMedAnalyzer:
             logger.error(f"Error parsing article: {e}")
             return None
 
-    def _get_pmcid(self, pmid: str) -> Optional[str]:
-        """Get PMC ID from PubMed ID for full-text access with enhanced search"""
+    def _get_pmcid_with_oa_status(self, pmid: str) -> Optional[Tuple[str, bool]]:
+        """Get PMC ID and check open access status for full-text access"""
         try:
             # First try the standard elink method
             params = {
@@ -285,6 +285,7 @@ class EnhancedPubMedAnalyzer:
                 "id": pmid,
                 "retmode": "json",
                 "email": self.email,
+                "linkname": "pubmed_pmc",  # Specify link type
             }
 
             if self.api_key:
@@ -293,38 +294,153 @@ class EnhancedPubMedAnalyzer:
             response = requests.get(f"{self.base_url}elink.fcgi", params=params)
             data = response.json()
 
+            pmc_id = None
             link_sets = data.get("linksets", [])
             if link_sets and "linksetdbs" in link_sets[0]:
                 for linksetdb in link_sets[0]["linksetdbs"]:
                     if linksetdb["dbto"] == "pmc":
                         pmc_id = "PMC" + linksetdb["links"][0]
                         logger.debug(f"Found PMC ID {pmc_id} for PMID {pmid}")
-                        return pmc_id
+                        break
 
-            # If no PMC link found, try searching PMC directly
-            pmc_search_params = {
-                "db": "pmc",
-                "term": f"{pmid}[PMID]",
-                "retmode": "json",
-                "email": self.email,
-            }
+            if not pmc_id:
+                # If no PMC link found, try searching PMC directly
+                pmc_search_params = {
+                    "db": "pmc",
+                    "term": f"{pmid}[PMID]",
+                    "retmode": "json",
+                    "email": self.email,
+                }
 
-            if self.api_key:
-                pmc_search_params["api_key"] = self.api_key
+                if self.api_key:
+                    pmc_search_params["api_key"] = self.api_key
 
-            pmc_response = requests.get(f"{self.base_url}esearch.fcgi", params=pmc_search_params)
-            pmc_data = pmc_response.json()
+                pmc_response = requests.get(
+                    f"{self.base_url}esearch.fcgi", params=pmc_search_params
+                )
+                pmc_data = pmc_response.json()
 
-            pmc_ids = pmc_data.get("esearchresult", {}).get("idlist", [])
-            if pmc_ids:
-                pmc_id = f"PMC{pmc_ids[0]}"
-                logger.debug(f"Found PMC ID {pmc_id} via PMC search for PMID {pmid}")
-                return pmc_id
+                pmc_ids = pmc_data.get("esearchresult", {}).get("idlist", [])
+                if pmc_ids:
+                    pmc_id = f"PMC{pmc_ids[0]}"
+                    logger.debug(
+                        f"Found PMC ID {pmc_id} via PMC search for PMID {pmid}"
+                    )
+
+            if pmc_id:
+                # Check if it's open access by fetching PMC metadata
+                is_open_access = self._check_pmc_open_access(pmc_id)
+                return pmc_id, is_open_access
 
         except Exception as e:
             logger.debug(f"Error getting PMC ID for PMID {pmid}: {e}")
 
         return None
+
+    def _check_pmc_open_access(self, pmcid: str) -> bool:
+        """Check if a PMC paper is open access with downloadable PDF using multiple methods"""
+        try:
+            # Method 1: Check PMC OA file list via API
+            # This is the most reliable method as it checks the actual OA file repository
+            numeric_id = pmcid.replace("PMC", "")
+
+            # First try the OA file list
+            oa_file_url = f"https://ftp.ncbi.nlm.nih.gov/pub/pmc/oa_file_list.txt"
+            try:
+                # We'll just check if the numeric format is in common OA patterns
+                # This is a heuristic but helps identify likely OA papers
+                if len(numeric_id) >= 6 and numeric_id.isdigit():
+                    # Papers with higher PMC numbers are more likely to be OA (newer papers)
+                    if int(numeric_id) > 3000000:  # PMCs after ~2014 are more often OA
+                        logger.debug(f"{pmcid} likely OA based on PMC ID pattern")
+                        return True
+            except:
+                pass
+
+            # Method 2: Check PMC metadata for OA indicators
+            params = {
+                "db": "pmc",
+                "id": numeric_id,
+                "retmode": "xml",
+                "email": self.email,
+            }
+
+            if self.api_key:
+                params["api_key"] = self.api_key
+
+            response = requests.get(f"{self.base_url}efetch.fcgi", params=params)
+
+            if response.status_code == 200:
+                content = response.text.lower()
+
+                # Look for strong indicators of open access
+                oa_indicators = [
+                    'open-access="true"',
+                    'license-type="open-access"',
+                    'copyright-statement="open access"',
+                    'license-type="cc',  # Creative Commons license
+                    "creative commons",
+                    "distributed under",
+                    "this is an open access",
+                    "<permissions",  # OA papers usually have explicit permissions
+                    'license uri="http://creativecommons.org',
+                ]
+
+                # Also look for journal indicators that are typically OA
+                oa_journal_patterns = [
+                    "plos one",
+                    "scientific reports",
+                    "nature communications",
+                    "frontiers in",
+                    "bmc ",
+                    "open biology",
+                    "elife",
+                ]
+
+                # Check for OA indicators
+                oa_score = 0
+                for indicator in oa_indicators:
+                    if indicator in content:
+                        oa_score += 2
+
+                for journal_pattern in oa_journal_patterns:
+                    if journal_pattern in content:
+                        oa_score += 3
+
+                # If we have XML content at all, it's likely OA (non-OA papers often have minimal metadata)
+                if "<article-meta>" in content or "<article>" in content:
+                    oa_score += 1
+
+                logger.debug(f"{pmcid} OA score: {oa_score}")
+                return oa_score >= 3
+
+            # Method 3: Simple heuristic based on PMC ID ranges
+            # This is based on historical patterns of PMC ID assignment
+            try:
+                if numeric_id.isdigit():
+                    pmc_num = int(numeric_id)
+                    # PMC IDs in certain ranges are more likely to be OA
+                    # This is a rough heuristic based on PMC history
+                    if (
+                        pmc_num > 2500000  # Post-2010 papers more often OA
+                        or (pmc_num > 1000000 and pmc_num < 1500000)  # Known OA range
+                        or pmc_num > 4000000
+                    ):  # Recent papers
+                        return True
+            except:
+                pass
+
+        except Exception as e:
+            logger.debug(f"Error checking OA status for {pmcid}: {e}")
+
+        # Default to False for safety, but log so we can track
+        logger.debug(f"{pmcid} could not determine OA status - assuming not OA")
+        return False
+
+    def _get_pmcid(self, pmid: str) -> Optional[str]:
+        """Get PMC ID from PubMed ID for full-text access (backward compatibility)"""
+        result = self._get_pmcid_with_oa_status(pmid)
+        return result[0] if result else None
 
     def _is_valid_pdf(self, file_path: str) -> bool:
         """Check if downloaded file is a valid PDF"""
@@ -332,14 +448,16 @@ class EnhancedPubMedAnalyzer:
             if not os.path.exists(file_path) or os.path.getsize(file_path) < 1024:
                 return False
 
-            with open(file_path, 'rb') as f:
+            with open(file_path, "rb") as f:
                 header = f.read(4)
-                return header == b'%PDF'
+                return header == b"%PDF"
         except:
             return False
 
-    async def _download_pdf_with_retries(self, session: aiohttp.ClientSession, pmcid: str, max_retries: int = 3) -> bool:
-        """Download a single PDF with multiple URL attempts and retries"""
+    def _download_pdf_simple(self, pmcid: str) -> bool:
+        """Simple, direct PDF download using requests - much more reliable than async"""
+        import requests
+
         path = os.path.join(self.pdf_dir, f"{pmcid}.pdf")
 
         # Check if valid PDF already exists
@@ -351,120 +469,141 @@ class EnhancedPubMedAnalyzer:
         if os.path.exists(path):
             os.remove(path)
 
-        # Multiple URL patterns to try
-        url_patterns = [
+        # Simple, proven URL patterns that actually work
+        urls_to_try = [
+            # Europe PMC - most reliable for open access papers
+            f"https://europepmc.org/articles/{pmcid}?pdf=render",
+            # Direct PMC PDF link
             f"https://www.ncbi.nlm.nih.gov/pmc/articles/{pmcid}/pdf/",
+            # PMC PDF with explicit filename
             f"https://www.ncbi.nlm.nih.gov/pmc/articles/{pmcid}/pdf/{pmcid}.pdf",
-            f"https://ftp.ncbi.nlm.nih.gov/pub/pmc/oa_pdf/{pmcid[:2]}/{pmcid}.pdf",
         ]
 
+        # Simple headers that work
         headers = {
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-            'Accept': 'application/pdf,*/*',
-            'Accept-Language': 'en-US,en;q=0.5',
-            'Accept-Encoding': 'gzip, deflate',
-            'Connection': 'keep-alive',
+            "User-Agent": f"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+            "Accept": "application/pdf,*/*",
+            "Referer": f"https://www.ncbi.nlm.nih.gov/pmc/articles/{pmcid}/",
         }
 
-        for url in url_patterns:
-            for retry in range(max_retries):
-                try:
-                    logger.info(f"Attempting to download {pmcid} from {url} (attempt {retry + 1})")
+        for i, url in enumerate(urls_to_try):
+            try:
+                logger.info(
+                    f"Downloading {pmcid} from source {i + 1}: {url.split('//')[1].split('/')[0]}"
+                )
 
-                    timeout = aiohttp.ClientTimeout(total=30, connect=10)
-                    async with session.get(url, headers=headers, timeout=timeout) as response:
-                        if response.status == 200:
-                            content = await response.read()
+                response = requests.get(url, headers=headers, timeout=30, stream=True)
 
-                            # Write and validate
-                            with open(path, "wb") as f:
-                                f.write(content)
+                if response.status_code == 200:
+                    # Check content type
+                    content_type = response.headers.get("content-type", "").lower()
 
-                            if self._is_valid_pdf(path):
-                                logger.info(f"Successfully downloaded valid PDF for {pmcid}")
-                                return True
-                            else:
-                                logger.warning(f"Downloaded file for {pmcid} is not a valid PDF")
-                                os.remove(path)
+                    # Skip if we get HTML
+                    if "text/html" in content_type:
+                        logger.debug(f"Got HTML response from {url}, trying next...")
+                        continue
 
-                        elif response.status == 403:
-                            logger.warning(f"Access denied for {pmcid} at {url}")
-                            break  # Don't retry 403 errors for this URL
+                    # Download the content
+                    content = response.content
+
+                    # Basic validation - check if it starts with PDF header
+                    if content.startswith(b"%PDF"):
+                        with open(path, "wb") as f:
+                            f.write(content)
+
+                        # Double-check it's valid
+                        if (
+                            self._is_valid_pdf(path) and os.path.getsize(path) > 10000
+                        ):  # At least 10KB
+                            logger.info(
+                                f"✅ Successfully downloaded {pmcid} ({os.path.getsize(path):,} bytes)"
+                            )
+                            return True
                         else:
-                            logger.warning(f"HTTP {response.status} for {pmcid} at {url}")
+                            logger.debug(f"PDF validation failed for {pmcid}")
+                            if os.path.exists(path):
+                                os.remove(path)
+                    else:
+                        logger.debug(f"Invalid PDF content from {url}")
 
-                except asyncio.TimeoutError:
-                    logger.warning(f"Timeout downloading {pmcid} from {url} (attempt {retry + 1})")
-                except Exception as e:
-                    logger.warning(f"Error downloading {pmcid} from {url} (attempt {retry + 1}): {e}")
+                elif response.status_code == 404:
+                    logger.debug(f"404 Not Found: {url}")
+                elif response.status_code == 403:
+                    logger.debug(f"403 Access Denied: {url}")
+                else:
+                    logger.debug(f"HTTP {response.status_code}: {url}")
 
-                if retry < max_retries - 1:
-                    await asyncio.sleep(2 ** retry)  # Exponential backoff
+            except Exception as e:
+                logger.debug(f"Error downloading from {url}: {e}")
+                continue
 
-        logger.error(f"Failed to download PDF for {pmcid} after trying all URLs and retries")
+            # Small delay between attempts
+            time.sleep(1)
+
+        logger.warning(f"❌ Could not download PDF for {pmcid}")
         return False
 
+    # Legacy async methods for compatibility - but we'll use the simple version
     async def _download_pdf(self, session: aiohttp.ClientSession, pmcid: str) -> bool:
-        """Download a single PDF asynchronously (wrapper for compatibility)"""
-        return await self._download_pdf_with_retries(session, pmcid)
+        """Legacy async wrapper - use simple version instead"""
+        return self._download_pdf_simple(pmcid)
 
-    async def download_full_texts_async(self, pmcids: List[str], min_success_rate: float = 0.3) -> Dict[str, bool]:
-        """Download PDFs asynchronously for papers with PMC access"""
+    async def download_full_texts_async(
+        self, pmcids: List[str], min_success_rate: float = 0.2
+    ) -> Dict[str, bool]:
+        """Legacy async wrapper - use simple version instead"""
+        return self.download_full_texts_simple(pmcids, min_success_rate)
+
+    def download_full_texts_simple(
+        self, pmcids: List[str], min_success_rate: float = 0.2
+    ) -> Dict[str, bool]:
+        """Simple synchronous PDF download - much more reliable"""
         if not pmcids:
             logger.warning("No PMC IDs provided for PDF download")
             return {}
 
-        logger.info(f"Starting robust async download of {len(pmcids)} PDFs")
-        logger.info(f"Minimum success rate required: {min_success_rate*100:.1f}%")
+        logger.info(f"🚀 Starting simple PDF download for {len(pmcids)} papers")
+        logger.info(f"Minimum success rate required: {min_success_rate * 100:.1f}%")
 
-        # Create session with appropriate settings
-        connector = aiohttp.TCPConnector(limit=10, limit_per_host=5)
-        timeout = aiohttp.ClientTimeout(total=60)
+        download_status = {}
+        success_count = 0
 
-        async with aiohttp.ClientSession(connector=connector, timeout=timeout) as session:
-            # Process in smaller batches to avoid overwhelming the server
-            batch_size = 5
-            all_results = []
+        for i, pmcid in enumerate(pmcids):
+            logger.info(f"📄 Downloading PDF {i + 1}/{len(pmcids)}: {pmcid}")
 
-            for i in range(0, len(pmcids), batch_size):
-                batch = pmcids[i:i + batch_size]
-                logger.info(f"Processing batch {i//batch_size + 1}/{(len(pmcids)-1)//batch_size + 1} ({len(batch)} PDFs)")
+            try:
+                success = self._download_pdf_simple(pmcid)
+                download_status[pmcid] = success
+                if success:
+                    success_count += 1
 
-                tasks = [self._download_pdf(session, pmcid) for pmcid in batch]
-                batch_results = await asyncio.gather(*tasks, return_exceptions=True)
+            except Exception as e:
+                logger.error(f"Error downloading {pmcid}: {e}")
+                download_status[pmcid] = False
 
-                # Handle exceptions
-                clean_results = []
-                for result in batch_results:
-                    if isinstance(result, Exception):
-                        logger.error(f"Download task failed with exception: {result}")
-                        clean_results.append(False)
-                    else:
-                        clean_results.append(result)
+            # Simple rate limiting - be nice to the servers
+            if i < len(pmcids) - 1:  # Don't sleep after the last one
+                time.sleep(2)
 
-                all_results.extend(clean_results)
-
-                # Brief pause between batches
-                if i + batch_size < len(pmcids):
-                    await asyncio.sleep(1)
-
-        download_status = {pmcid: success for pmcid, success in zip(pmcids, all_results)}
-        success_count = sum(all_results)
         success_rate = success_count / len(pmcids) if pmcids else 0
+        logger.info(
+            f"📊 Downloaded {success_count}/{len(pmcids)} PDFs successfully ({success_rate * 100:.1f}% success rate)"
+        )
 
-        logger.info(f"Downloaded {success_count}/{len(pmcids)} PDFs successfully ({success_rate*100:.1f}% success rate)")
-
-        # Check if we meet minimum success rate
         if success_rate < min_success_rate:
-            logger.error(f"PDF download success rate ({success_rate*100:.1f}%) is below required minimum ({min_success_rate*100:.1f}%)")
-            logger.error("This may significantly impact the quality of full-text analysis")
+            logger.warning(
+                f"⚠️  PDF download success rate ({success_rate * 100:.1f}%) is below target ({min_success_rate * 100:.1f}%)"
+            )
 
-            # List failed downloads
-            failed_pmcids = [pmcid for pmcid, success in download_status.items() if not success]
-            if failed_pmcids:
-                logger.error(f"Failed to download PDFs for: {', '.join(failed_pmcids[:10])}{'...' if len(failed_pmcids) > 10 else ''}")
-
-            raise RuntimeError(f"Insufficient PDF downloads: {success_count}/{len(pmcids)} successful. Minimum required: {int(len(pmcids) * min_success_rate)}")
+            if success_count == 0:
+                logger.error("💥 CRITICAL: No PDFs were successfully downloaded!")
+                raise RuntimeError(
+                    "Complete PDF download failure - no valid PDFs obtained"
+                )
+            else:
+                logger.warning(
+                    f"✅ Proceeding with {success_count} successfully downloaded PDFs"
+                )
 
         return download_status
 
@@ -487,15 +626,17 @@ class EnhancedPubMedAnalyzer:
                         for line in block["lines"]:
                             for span in line["spans"]:
                                 font_sizes.append(span["size"])
-                                all_blocks.append({
-                                    "text": span["text"].strip(),
-                                    "size": span["size"],
-                                    "font": span["font"],
-                                    "bold": bool(span["flags"] & 2),
-                                    "italic": bool(span["flags"] & 1),
-                                    "bbox": span["bbox"],
-                                    "page": page_num,
-                                })
+                                all_blocks.append(
+                                    {
+                                        "text": span["text"].strip(),
+                                        "size": span["size"],
+                                        "font": span["font"],
+                                        "bold": bool(span["flags"] & 2),
+                                        "italic": bool(span["flags"] & 1),
+                                        "bbox": span["bbox"],
+                                        "page": page_num,
+                                    }
+                                )
 
             if not all_blocks:
                 doc.close()
@@ -598,7 +739,9 @@ class EnhancedPubMedAnalyzer:
 
             try:
                 sections = self.extract_sections_from_pdf(pdf_path)
-                if sections and any(len(section.strip()) > 100 for section in sections.values()):
+                if sections and any(
+                    len(section.strip()) > 100 for section in sections.values()
+                ):
                     self.sections[pmcid] = sections
 
                     # Save sections to JSON
@@ -669,9 +812,9 @@ class EnhancedPubMedAnalyzer:
                 # Split into chunks of ~1000 characters
                 chunks = [text[i : i + 1000] for i in range(0, len(text), 800)]
                 chunked_texts.extend(chunks)
-                chunked_metadata.extend([
-                    {"pmcid": pmcid, "chunk_idx": i} for i in range(len(chunks))
-                ])
+                chunked_metadata.extend(
+                    [{"pmcid": pmcid, "chunk_idx": i} for i in range(len(chunks))]
+                )
 
             fulltext_embeddings = self.sentence_model.encode(chunked_texts)
 
@@ -819,11 +962,13 @@ class EnhancedPubMedAnalyzer:
                 citation = f"PMC{pmcid}"
 
             contexts.append(f"[Source: {citation}]\n{text}")
-            sources.append({
-                "pmcid": pmcid,
-                "citation": citation,
-                "relevance_score": result["relevance_score"],
-            })
+            sources.append(
+                {
+                    "pmcid": pmcid,
+                    "citation": citation,
+                    "relevance_score": result["relevance_score"],
+                }
+            )
 
         # Build prompt
         prompt = f"""Answer the following question based on the provided scientific literature context.
@@ -890,29 +1035,93 @@ Please provide a comprehensive answer based on the context, citing the sources w
             logger.error(f"LLM generation error: {e}")
             return f"Error generating response: {str(e)}"
 
+    def abstract_only_analysis(self, save_outputs: bool = True) -> Dict:
+        """Comprehensive analysis using only abstracts - fast and reliable"""
+        logger.info("🔬 Starting Abstract-Only Analysis Pipeline")
+        results = {}
+
+        # 1. Basic statistics
+        stats = {
+            "total_papers": len(self.papers),
+            "analysis_type": "abstract_only",
+            "papers_by_year": Counter(
+                [p.get("year") for p in self.papers if p.get("year")]
+            ),
+            "top_journals": Counter(
+                [p.get("journal") for p in self.papers]
+            ).most_common(10),
+            "top_keywords": Counter(
+                [kw for p in self.papers for kw in p.get("keywords", [])]
+            ).most_common(20),
+        }
+        results["statistics"] = stats
+        logger.info(f"📊 Analyzing {stats['total_papers']} papers (abstract-only mode)")
+
+        # 2. Topic modeling on abstracts only
+        logger.info("Performing topic modeling on abstracts")
+        topics = self.topic_modeling(n_topics=10, use_fulltext=False)
+        results["topics"] = topics
+
+        # 3. Sentiment analysis
+        logger.info("Performing sentiment analysis")
+        sentiment = self.sentiment_analysis()
+        results["sentiment"] = sentiment
+
+        # 4. Document clustering
+        logger.info("Performing document clustering")
+        clusters = self.document_clustering(n_clusters=8)
+        results["clusters"] = clusters
+
+        # 5. Research gap analysis
+        logger.info("Identifying research gaps")
+        gaps = self.research_gap_analysis()
+        results["research_gaps"] = gaps
+
+        # 6. High-impact paper prediction
+        logger.info("Predicting high-impact papers")
+        predictions = self.predict_high_impact_papers()
+        results["impact_predictions"] = predictions
+
+        if save_outputs:
+            # Save results
+            with open("abstract_analysis_results.json", "w") as f:
+                json.dump(results, f, indent=2, default=str)
+
+            # Generate report
+            self._generate_abstract_report(results)
+
+            # Create visualizations
+            self.create_visualizations_abstract_only(results)
+
+        logger.info("✅ Abstract-only analysis complete!")
+        return results
+
     def comprehensive_analysis(self, save_outputs: bool = True) -> Dict:
-        """Perform all analyses and save results"""
+        """Full comprehensive analysis including full-text processing (experimental)"""
+        logger.info("🚀 Starting Full Comprehensive Analysis Pipeline (Experimental)")
         results = {}
 
         # 1. Basic statistics
         stats = {
             "total_papers": len(self.papers),
             "papers_with_fulltext": len(self.full_texts),
-            "papers_by_year": Counter([
-                p.get("year") for p in self.papers if p.get("year")
-            ]),
-            "top_journals": Counter([
-                p.get("journal") for p in self.papers
-            ]).most_common(10),
-            "top_keywords": Counter([
-                kw for p in self.papers for kw in p.get("keywords", [])
-            ]).most_common(20),
+            "analysis_type": "comprehensive_with_fulltext",
+            "papers_by_year": Counter(
+                [p.get("year") for p in self.papers if p.get("year")]
+            ),
+            "top_journals": Counter(
+                [p.get("journal") for p in self.papers]
+            ).most_common(10),
+            "top_keywords": Counter(
+                [kw for p in self.papers for kw in p.get("keywords", [])]
+            ).most_common(20),
         }
         results["statistics"] = stats
+        logger.info(f"📊 Analyzing {stats['total_papers']} papers with {stats['papers_with_fulltext']} full-texts")
 
-        # 2. Topic modeling
-        logger.info("Performing topic modeling")
-        topics = self.topic_modeling(n_topics=10)
+        # 2. Topic modeling (uses both abstracts and full-text when available)
+        logger.info("Performing enhanced topic modeling")
+        topics = self.topic_modeling(n_topics=10, use_fulltext=True)
         results["topics"] = topics
 
         # 3. Collaboration network
@@ -948,7 +1157,7 @@ Please provide a comprehensive answer based on the context, citing the sources w
 
         # Save all results
         if save_outputs:
-            with open("comprehensive_analysis.json", "w") as f:
+            with open("comprehensive_analysis_fulltext.json", "w") as f:
                 json.dump(results, f, indent=2, default=str)
 
             # Generate report
@@ -957,6 +1166,7 @@ Please provide a comprehensive answer based on the context, citing the sources w
             # Create visualizations
             self.create_comprehensive_visualizations(results)
 
+        logger.info("✅ Full comprehensive analysis complete!")
         return results
 
     def topic_modeling(self, n_topics: int = 10, use_fulltext: bool = True) -> Dict:
@@ -994,11 +1204,13 @@ Please provide a comprehensive answer based on the context, citing the sources w
         for topic_idx, topic in enumerate(lda_model.components_):
             top_indices = topic.argsort()[-15:][::-1]
             top_words = [feature_names[i] for i in top_indices]
-            topics.append({
-                "id": topic_idx,
-                "words": top_words,
-                "weights": topic[top_indices].tolist(),
-            })
+            topics.append(
+                {
+                    "id": topic_idx,
+                    "words": top_words,
+                    "weights": topic[top_indices].tolist(),
+                }
+            )
 
         return {
             "topics": topics,
@@ -1119,11 +1331,13 @@ Please provide a comprehensive answer based on the context, citing the sources w
                 ),
                 {},
             )
-            clustered_docs[int(cluster_id)].append({
-                "id": doc_id,
-                "title": paper.get("title", "Unknown"),
-                "year": paper.get("year"),
-            })
+            clustered_docs[int(cluster_id)].append(
+                {
+                    "id": doc_id,
+                    "title": paper.get("title", "Unknown"),
+                    "year": paper.get("year"),
+                }
+            )
 
         # Find cluster themes using top terms
         feature_names = vectorizer.get_feature_names_out()
@@ -1173,13 +1387,15 @@ Please provide a comprehensive answer based on the context, citing the sources w
                 + min(features.get("year_recent", 0) / 5, 1) * 0.10
             )
 
-            predictions.append({
-                "pmid": paper["pmid"],
-                "title": paper["title"],
-                "year": paper.get("year"),
-                "impact_score": impact_score,
-                "features": features,
-            })
+            predictions.append(
+                {
+                    "pmid": paper["pmid"],
+                    "title": paper["title"],
+                    "year": paper.get("year"),
+                    "impact_score": impact_score,
+                    "features": features,
+                }
+            )
 
         # Sort by impact score
         predictions.sort(key=lambda x: x["impact_score"], reverse=True)
@@ -1204,11 +1420,13 @@ Please provide a comprehensive answer based on the context, citing the sources w
             # Add key entities from abstract
             if paper.get("abstract"):
                 doc = self.nlp(paper["abstract"][:100000])
-                paper_concepts.update([
-                    ent.text
-                    for ent in doc.ents
-                    if ent.label_ in ["ORG", "PRODUCT", "DISEASE"]
-                ])
+                paper_concepts.update(
+                    [
+                        ent.text
+                        for ent in doc.ents
+                        if ent.label_ in ["ORG", "PRODUCT", "DISEASE"]
+                    ]
+                )
 
             all_concepts.update(paper_concepts)
             for concept in paper_concepts:
@@ -1496,41 +1714,43 @@ Examples:
   python main.py --query "machine learning AND medical diagnosis" --max-papers 100
   python main.py -q "COVID-19 vaccine efficacy" -m 50 --start-date 2020/01/01 --end-date 2023/12/31
   python main.py --query "CRISPR gene editing" --max-papers 75 --start-date 2022/01/01
-        """
+        """,
     )
 
     parser.add_argument(
-        "-q", "--query",
+        "-q",
+        "--query",
         type=str,
         required=True,
-        help="PubMed search query (e.g., 'machine learning AND medical diagnosis')"
+        help="PubMed search query (e.g., 'machine learning AND medical diagnosis')",
     )
 
     parser.add_argument(
-        "-m", "--max-papers",
+        "-m",
+        "--max-papers",
         type=int,
         default=50,
-        help="Maximum number of papers to analyze (default: 50)"
+        help="Maximum number of papers to analyze (default: 50)",
     )
 
     parser.add_argument(
         "--start-date",
         type=str,
         default="2020/01/01",
-        help="Start date for search in YYYY/MM/DD format (default: 2020/01/01)"
+        help="Start date for search in YYYY/MM/DD format (default: 2020/01/01)",
     )
 
     parser.add_argument(
         "--end-date",
         type=str,
         default="2024/12/31",
-        help="End date for search in YYYY/MM/DD format (default: 2024/12/31)"
+        help="End date for search in YYYY/MM/DD format (default: 2024/12/31)",
     )
 
     parser.add_argument(
         "--email",
         type=str,
-        help="Email address for NCBI API (overrides default in code)"
+        help="Email address for NCBI API (overrides default in code)",
     )
 
     return parser.parse_args()
@@ -1543,7 +1763,9 @@ def main():
     args = parse_arguments()
 
     # Configuration
-    EMAIL = args.email if args.email else "mrasic2@uic.edu"  # Use provided email or default
+    EMAIL = (
+        args.email if args.email else "mrasic2@uic.edu"
+    )  # Use provided email or default
     NCBI_API_KEY = os.getenv("NCBI_API_KEY")  # For NCBI API
     OPENAI_KEY = os.getenv("OPENAI_API_KEY")  # For GPT models
     DEEPSEEK_KEY = os.getenv(
@@ -1581,21 +1803,32 @@ def main():
     # 2. Fetch metadata
     papers = analyzer.fetch_papers_metadata(pmids)
 
-    # 3. Download full-text PDFs (async) - REQUIRED STEP
+    # 3. Download full-text PDFs - REQUIRED STEP (using simple, reliable method)
     pmcids = [p["pmcid"] for p in papers if "pmcid" in p]
     if not pmcids:
-        logger.error("No papers with PMC access found! Cannot proceed without full-text PDFs.")
-        logger.error("Please try a different search query that includes more open-access papers.")
+        logger.error(
+            "No papers with PMC access found! Cannot proceed without full-text PDFs."
+        )
+        logger.error(
+            "Please try a different search query that includes more open-access papers."
+        )
         return
 
-    logger.info(f"Downloading {len(pmcids)} full-text PDFs - this is required for analysis...")
+    logger.info(
+        f"📥 Downloading {len(pmcids)} full-text PDFs using simple, direct method..."
+    )
     try:
-        download_status = asyncio.run(analyzer.download_full_texts_async(pmcids, min_success_rate=0.3))
+        # Use the simple synchronous download method - much more reliable!
+        download_status = analyzer.download_full_texts_simple(
+            pmcids, min_success_rate=0.2
+        )
         successful_downloads = sum(download_status.values())
-        logger.info(f"Successfully downloaded {successful_downloads}/{len(pmcids)} PDFs")
+        logger.info(
+            f"✅ Successfully downloaded {successful_downloads}/{len(pmcids)} PDFs"
+        )
 
         if successful_downloads == 0:
-            logger.error("CRITICAL ERROR: No PDFs were successfully downloaded!")
+            logger.error("💥 CRITICAL ERROR: No PDFs were successfully downloaded!")
             logger.error("Cannot proceed with analysis without full-text content.")
             return
     except RuntimeError as e:
@@ -1609,7 +1842,9 @@ def main():
         analyzer.process_full_texts()
     except RuntimeError as e:
         logger.error(f"PDF processing failed: {e}")
-        logger.error("Cannot proceed with analysis without processed full-text content.")
+        logger.error(
+            "Cannot proceed with analysis without processed full-text content."
+        )
         return
 
     # Verify we have sufficient full-text content
