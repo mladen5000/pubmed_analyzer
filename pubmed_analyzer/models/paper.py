@@ -51,6 +51,11 @@ class Paper:
         if self.pmcid and not self.pmcid.startswith(('PMC', 'pmc')):
             self.pmcid = f"PMC{self.pmcid}"
 
+    def __repr__(self):
+        """Clean representation without verbose abstract text"""
+        title_short = (self.title[:50] + '...') if self.title and len(self.title) > 50 else self.title
+        return f"Paper(pmid='{self.pmid}', pmcid={self.pmcid}, title='{title_short}', has_abstract={bool(self.abstract)})"
+
     @property
     def clean_pmid(self) -> str:
         """Return PMID without prefix"""

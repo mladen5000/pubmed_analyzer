@@ -76,6 +76,10 @@ class NCBIClient:
 
             url = self.BASE_URL + endpoint
 
+            # Check if URL might be too long for GET request
+            test_url = url + '?' + '&'.join(f'{k}={v}' for k, v in params.items())
+            use_post = len(test_url) > 2000 or (params.get('id') and len(str(params.get('id'))) > 1000)
+
             # Adaptive delay based on request history
             current_time = asyncio.get_event_loop().time()
             time_since_last = current_time - self.last_request_time
@@ -86,7 +90,11 @@ class NCBIClient:
                 await asyncio.sleep(min_interval - time_since_last)
 
             try:
-                response = await self.session.get(url, params=params)
+                if use_post:
+                    logger.debug(f"Using POST request for {endpoint} (URL too long)")
+                    response = await self.session.post(url, data=params)
+                else:
+                    response = await self.session.get(url, params=params)
                 self.last_request_time = asyncio.get_event_loop().time()
                 self.request_count += 1
 
@@ -199,10 +207,11 @@ class NCBIClient:
         if not pmids:
             raise ValueError("No PMIDs provided")
 
-        # Batch up to 200 IDs per NCBI recommendation
-        if len(pmids) > 200:
-            logger.warning(f"Truncating {len(pmids)} PMIDs to 200 for single request")
-            pmids = pmids[:200]
+        # Use smaller batches to avoid URL length issues
+        max_batch_size = 100  # Reduced from 200 to avoid 414 errors
+        if len(pmids) > max_batch_size:
+            logger.warning(f"Truncating {len(pmids)} PMIDs to {max_batch_size} for single request")
+            pmids = pmids[:max_batch_size]
 
         # Enhanced parameters for maximum abstract retrieval
         params = {

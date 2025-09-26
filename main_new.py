@@ -57,8 +57,14 @@ class ModularPubMedPipeline:
 
         # Initialize core components
         self.searcher = PubMedSearcher(email, api_key)
-        self.id_converter = PMIDToPMCConverter(email, api_key)
-        self.pdf_fetcher = UnifiedPDFFetcher()
+
+        # Only initialize PDF-related components if needed
+        if not skip_pdf_download:
+            self.id_converter = PMIDToPMCConverter(email, api_key)
+            self.pdf_fetcher = UnifiedPDFFetcher()
+        else:
+            self.id_converter = None
+            self.pdf_fetcher = None
 
         # Initialize enhanced analysis components
         if LLM_AVAILABLE:
