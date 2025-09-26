@@ -8,19 +8,32 @@ This is a **PubMed Analyzer** - a modular scientific literature analysis pipelin
 
 ## Core Architecture & Entry Points
 
-The project has evolved into multiple specialized entry points:
+The project maintains **multiple specialized entry points** to serve different user needs and complexity levels:
 
-### 1. Main CLI Interface (`pubmed_analyzer.py`)
+### 1. Main CLI Interface (`pubmed_analyzer.py`) - **RECOMMENDED FOR MOST USERS**
 **Primary entry point** with two optimized modes:
 - **ABSTRACTS MODE**: Ultra-fast abstract-only analysis (recommended for exploration)
 - **FULL MODE**: Comprehensive analysis with robust PDF downloading
+- **Best for**: Quick analysis, exploration, general users
 
-### 2. Enhanced Pipeline (`enhanced_main.py`)
+### 2. Enhanced Pipeline (`enhanced_main.py`) - **FOR ADVANCED RESEARCH**
 Advanced NLP/ML analysis with enhanced RAG capabilities, topic modeling, and comprehensive visualizations.
+- **Best for**: Researchers, comprehensive analysis, ML/NLP features
+- **Requirements**: Additional dependencies, API keys for LLM features
 
-### 3. Legacy Scripts
-- `main_new.py`: Original modular pipeline (moved to legacy)
-- `fetch_pubmed.py`: Simple fetching utilities
+### 3. Modular Pipeline (`main_new.py`) - **FOR DEVELOPERS**
+Original modular pipeline with full control over components.
+- **Best for**: Development, customization, fine-grained control
+- **Status**: Maintained for backward compatibility
+
+### 4. Legacy Utilities
+- `fetch_pubmed.py`: Simple fetching utilities (legacy)
+
+**Entry Point Selection Guide:**
+- **New users**: Start with `pubmed_analyzer.py abstracts`
+- **Researchers**: Use `enhanced_main.py` for advanced analysis
+- **Developers**: Use `main_new.py` for customization
+- **Simple fetching**: Use `fetch_pubmed.py` (basic use cases)
 
 ## Core Features
 
