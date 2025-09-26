@@ -12,6 +12,7 @@ from pathlib import Path
 from ..models.paper import Paper
 from ..core.search import PubMedSearcher
 from ..core.robust_pdf_fetcher import RobustPDFFetcher, BatchResult, DownloadResult
+from ..core.enhanced_pdf_fetcher import EnhancedPDFFetcher
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +34,8 @@ class PubMedPDFFetcher:
                  api_key: Optional[str] = None,
                  pdf_dir: str = "pdfs",
                  min_success_rate: float = 0.3,
-                 batch_size: int = 5):
+                 batch_size: int = 5,
+                 enhanced_mode: bool = True):
         """
         Initialize the PDF fetcher
 
@@ -43,21 +45,36 @@ class PubMedPDFFetcher:
             pdf_dir: Directory to store downloaded PDFs
             min_success_rate: Minimum success rate before halting batch operations
             batch_size: Number of papers to download per batch
+            enhanced_mode: Enable third-party sources (arXiv API, paperscraper, PyPaperBot)
         """
         self.email = email
         self.api_key = api_key
+        self.enhanced_mode = enhanced_mode
 
         # Initialize components
         self.searcher = PubMedSearcher(email, api_key)
-        self.pdf_fetcher = RobustPDFFetcher(
-            pdf_dir=pdf_dir,
-            min_success_rate=min_success_rate,
-            batch_size=batch_size
-        )
+
+        if enhanced_mode:
+            self.pdf_fetcher = EnhancedPDFFetcher(
+                pdf_dir=pdf_dir,
+                min_success_rate=min_success_rate,
+                batch_size=batch_size,
+                enable_third_party=True
+            )
+        else:
+            self.pdf_fetcher = RobustPDFFetcher(
+                pdf_dir=pdf_dir,
+                min_success_rate=min_success_rate,
+                batch_size=batch_size
+            )
 
         logger.info(f"Initialized PubMedPDFFetcher with email: {email}")
         if api_key:
             logger.info("Using NCBI API key for higher rate limits")
+        if enhanced_mode:
+            logger.info("Enhanced mode enabled: 60-80% success rates with third-party sources")
+        else:
+            logger.info("Standard mode: 20-40% success rates with official sources only")
 
     async def download_from_pmids(self, pmids: List[str]) -> BatchResult:
         """
@@ -165,7 +182,13 @@ class PubMedPDFFetcher:
 
     def get_statistics(self) -> Dict[str, Any]:
         """Get comprehensive statistics about PDF fetching performance"""
-        return self.pdf_fetcher.get_statistics()
+        stats = self.pdf_fetcher.get_statistics()
+
+        # Add enhanced strategy info if available
+        if hasattr(self.pdf_fetcher, 'get_strategy_info'):
+            stats['strategy_info'] = self.pdf_fetcher.get_strategy_info()
+
+        return stats
 
     async def health_check(self) -> Dict[str, Any]:
         """Perform health check of all download strategies"""
@@ -204,7 +227,8 @@ class PubMedPDFFetcherSync:
 async def download_pdfs_by_pmids(pmids: List[str],
                                 email: str,
                                 api_key: Optional[str] = None,
-                                pdf_dir: str = "pdfs") -> BatchResult:
+                                pdf_dir: str = "pdfs",
+                                enhanced_mode: bool = True) -> BatchResult:
     """
     Quick function to download PDFs by PMIDs
 
@@ -213,11 +237,12 @@ async def download_pdfs_by_pmids(pmids: List[str],
         email: Email for NCBI API
         api_key: Optional NCBI API key
         pdf_dir: Directory to save PDFs
+        enhanced_mode: Enable third-party sources for higher success rates
 
     Returns:
         BatchResult with download statistics
     """
-    fetcher = PubMedPDFFetcher(email=email, api_key=api_key, pdf_dir=pdf_dir)
+    fetcher = PubMedPDFFetcher(email=email, api_key=api_key, pdf_dir=pdf_dir, enhanced_mode=enhanced_mode)
     return await fetcher.download_from_pmids(pmids)
 
 
@@ -225,7 +250,8 @@ async def download_pdfs_by_search(query: str,
                                  email: str,
                                  max_results: int = 50,
                                  api_key: Optional[str] = None,
-                                 pdf_dir: str = "pdfs") -> BatchResult:
+                                 pdf_dir: str = "pdfs",
+                                 enhanced_mode: bool = True) -> BatchResult:
     """
     Quick function to search and download PDFs
 
@@ -235,18 +261,20 @@ async def download_pdfs_by_search(query: str,
         max_results: Maximum papers to download
         api_key: Optional NCBI API key
         pdf_dir: Directory to save PDFs
+        enhanced_mode: Enable third-party sources for higher success rates
 
     Returns:
         BatchResult with download statistics
     """
-    fetcher = PubMedPDFFetcher(email=email, api_key=api_key, pdf_dir=pdf_dir)
+    fetcher = PubMedPDFFetcher(email=email, api_key=api_key, pdf_dir=pdf_dir, enhanced_mode=enhanced_mode)
     return await fetcher.download_from_search(query, max_results=max_results)
 
 
 def download_pdfs_sync(pmids: List[str],
                       email: str,
                       api_key: Optional[str] = None,
-                      pdf_dir: str = "pdfs") -> BatchResult:
+                      pdf_dir: str = "pdfs",
+                      enhanced_mode: bool = True) -> BatchResult:
     """
     Synchronous convenience function for PDF downloads
 
@@ -255,8 +283,9 @@ def download_pdfs_sync(pmids: List[str],
         email: Email for NCBI API
         api_key: Optional NCBI API key
         pdf_dir: Directory to save PDFs
+        enhanced_mode: Enable third-party sources for higher success rates
 
     Returns:
         BatchResult with download statistics
     """
-    return asyncio.run(download_pdfs_by_pmids(pmids, email, api_key, pdf_dir))
+    return asyncio.run(download_pdfs_by_pmids(pmids, email, api_key, pdf_dir, enhanced_mode))

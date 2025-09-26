@@ -4,4 +4,8 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "arxiv>=2.2.0",
+    "paperscraper>=0.3.2",
+    "pypaperbot>=1.4.1",
+]
