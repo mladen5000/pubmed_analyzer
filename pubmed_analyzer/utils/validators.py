@@ -1,8 +1,19 @@
 import os
 import logging
 from pathlib import Path
+from dataclasses import dataclass
+from typing import Optional, Dict, Any
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class ValidationResult:
+    """Result of PDF validation"""
+    is_valid: bool
+    file_size: int = 0
+    error_message: Optional[str] = None
+    details: Dict[str, Any] = None
 
 
 class PDFValidator:

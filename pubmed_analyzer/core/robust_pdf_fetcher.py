@@ -204,6 +204,19 @@ class PDFDownloadStrategy(ABC):
                     error_message="No PDF URL found"
                 )
 
+            # SPECIAL HANDLING: PMC OA Service requires XML parsing
+            if pdf_url.startswith("PMC_OA_SERVICE:"):
+                pmcid = pdf_url.replace("PMC_OA_SERVICE:", "")
+                actual_pdf_url = await self._parse_pmc_oa_service(session, pmcid)
+                if not actual_pdf_url:
+                    return DownloadResult(
+                        pmid=paper.pmid,
+                        success=False,
+                        strategy_used=self.name,
+                        error_message="No PDF found in OA Service XML"
+                    )
+                pdf_url = actual_pdf_url
+
             # Rate limiting
             await rate_limiter.acquire_for_url(pdf_url)
 
@@ -241,13 +254,35 @@ class PDFDownloadStrategy(ABC):
                 start_time = time.time()
 
                 headers = {
-                    'User-Agent': 'RobustPDFFetcher/1.0 (mailto:researcher@university.edu)',
+                    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
                     'Accept': 'application/pdf,*/*',
+                    'Accept-Language': 'en-US,en;q=0.9',
+                    'Accept-Encoding': 'gzip, deflate, br',
+                    'Connection': 'keep-alive',
+                    'Upgrade-Insecure-Requests': '1',
                 }
 
                 timeout = aiohttp.ClientTimeout(total=30)
-                async with session.get(pdf_url, headers=headers, timeout=timeout) as response:
+                async with session.get(pdf_url, headers=headers, timeout=timeout, allow_redirects=True) as response:
                     if response.status == 200:
+                        # CRITICAL FIX: Check final URL and content-type for PDF
+                        final_url = str(response.url).lower()
+                        content_type = response.headers.get('content-type', '').lower()
+
+                        # Only proceed if we have a PDF URL or content-type
+                        if not (('.pdf' in final_url) or ('application/pdf' in content_type)):
+                            logger.debug(f"Final URL not PDF: {final_url}, content-type: {content_type}")
+                            if attempt < max_retries - 1:
+                                await asyncio.sleep(base_delay * (2 ** attempt))
+                                continue
+                            else:
+                                return DownloadResult(
+                                    pmid=paper.pmid,
+                                    success=False,
+                                    attempt_count=attempt + 1,
+                                    error_message=f"Redirected to non-PDF: {final_url}"
+                                )
+
                         content = await response.read()
 
                         # Validate PDF content
@@ -355,17 +390,68 @@ class PDFDownloadStrategy(ABC):
         content_lower = content[:2048].lower()
         return not any(indicator.lower() in content_lower for indicator in paywall_indicators)
 
+    async def _parse_pmc_oa_service(self, session: aiohttp.ClientSession, pmcid: str) -> Optional[str]:
+        """Parse PMC OA Service XML response to extract PDF URL"""
+        try:
+            import xml.etree.ElementTree as ET
 
-class PMCOAServiceStrategy(PDFDownloadStrategy):
-    """Official PMC Open Access service strategy"""
+            oa_url = f"https://www.ncbi.nlm.nih.gov/pmc/utils/oa/oa.fcgi?id={pmcid}"
+            headers = {
+                'User-Agent': 'PubMedAnalyzer/1.0 (mailto:researcher@university.edu)',
+                'Accept': 'application/xml, text/xml',
+            }
+
+            async with session.get(oa_url, headers=headers, timeout=aiohttp.ClientTimeout(total=15)) as response:
+                if response.status != 200:
+                    logger.debug(f"PMC OA Service returned {response.status} for {pmcid}")
+                    return None
+
+                xml_content = await response.text()
+                root = ET.fromstring(xml_content)
+
+                # Check for errors
+                error = root.find('error')
+                if error is not None:
+                    logger.debug(f"PMC OA Service error for {pmcid}: {error.text}")
+                    return None
+
+                # Find PDF link
+                records = root.find('records')
+                if records is None:
+                    return None
+
+                record = records.find('record')
+                if record is None:
+                    return None
+
+                # Look for PDF link
+                for link in record.findall('link'):
+                    if 'pdf' in link.get('format', '').lower():
+                        href = link.get('href')
+                        if href:
+                            # Convert FTP to HTTPS if needed
+                            if href.startswith('ftp://ftp.ncbi.nlm.nih.gov'):
+                                href = href.replace('ftp://ftp.ncbi.nlm.nih.gov', 'https://ftp.ncbi.nlm.nih.gov')
+                            logger.debug(f"Found PDF via OA Service: {href}")
+                            return href
+
+                return None
+
+        except Exception as e:
+            logger.error(f"Failed to parse PMC OA Service XML for {pmcid}: {e}")
+            return None
+
+
+class EuropePMCStrategy(PDFDownloadStrategy):
+    """EuropePMC - Highest success rate for PMC papers"""
 
     @property
     def name(self) -> str:
-        return "PMC OA Service"
+        return "EuropePMC"
 
     @property
     def priority(self) -> int:
-        return 1  # Highest priority
+        return 0  # Highest priority
 
     async def can_handle(self, paper: Paper) -> bool:
         return paper.pmcid is not None
@@ -376,7 +462,45 @@ class PMCOAServiceStrategy(PDFDownloadStrategy):
 
         # Clean PMC ID
         pmc_id = paper.pmcid.replace('PMC', '')
-        return f"https://www.ncbi.nlm.nih.gov/pmc/utils/oa/oa.fcgi?id=PMC{pmc_id}&format=pdf"
+        return f"https://europepmc.org/articles/PMC{pmc_id}?pdf=render"
+
+
+class PMCOAServiceStrategy(PDFDownloadStrategy):
+    """FIXED: Official PMC Open Access service with proper XML parsing"""
+
+    @property
+    def name(self) -> str:
+        return "PMC OA Service"
+
+    @property
+    def priority(self) -> int:
+        return 1  # High priority - now working correctly
+
+    async def can_handle(self, paper: Paper) -> bool:
+        return paper.pmcid is not None
+
+    async def get_pdf_url(self, paper: Paper) -> Optional[str]:
+        """Get PDF URL by parsing PMC OA Service XML response"""
+        if not paper.pmcid:
+            return None
+
+        try:
+            import xml.etree.ElementTree as ET
+
+            # Clean PMC ID
+            pmc_id = paper.pmcid.replace('PMC', '')
+            full_pmcid = f"PMC{pmc_id}"
+
+            # Call OA service WITHOUT format=pdf (this was the bug!)
+            oa_url = f"https://www.ncbi.nlm.nih.gov/pmc/utils/oa/oa.fcgi?id={full_pmcid}"
+
+            # We'll need to make this request in the download method since we need session
+            # Return a special marker to indicate we need XML parsing
+            return f"PMC_OA_SERVICE:{full_pmcid}"
+
+        except Exception as e:
+            logger.error(f"PMC OA Service URL generation failed: {e}")
+            return None
 
 
 class DOIRedirectStrategy(PDFDownloadStrategy):
@@ -426,36 +550,31 @@ class ArxivStrategy(PDFDownloadStrategy):
         return None
 
 
-class PubMedCentralFallbackStrategy(PDFDownloadStrategy):
-    """Try PMC even without PMC ID using PMID"""
+class DirectPMCStrategy(PDFDownloadStrategy):
+    """Direct PMC PDF access with working URL patterns"""
 
     @property
     def name(self) -> str:
-        return "PMC Fallback"
+        return "Direct PMC"
 
     @property
     def priority(self) -> int:
-        return 4
+        return 2
 
     async def can_handle(self, paper: Paper) -> bool:
-        # Always try this as fallback
-        return paper.pmid is not None
+        return paper.pmcid is not None
 
     async def get_pdf_url(self, paper: Paper) -> Optional[str]:
-        if not paper.pmid:
+        if not paper.pmcid:
             return None
 
-        # Try PMC direct URL patterns
-        pmid = paper.pmid.replace('PMID:', '').strip()
+        # Clean PMC ID
+        pmc_id = paper.pmcid.replace('PMC', '')
 
-        # Multiple PMC URL patterns to try
-        urls = [
-            f"https://www.ncbi.nlm.nih.gov/pmc/articles/pmid/{pmid}/pdf/",
-            f"https://www.ncbi.nlm.nih.gov/pmc/utils/oa/oa.fcgi?id={pmid}&format=pdf",
-        ]
-
-        # Return first URL (the strategy will try it)
-        return urls[0]
+        # CRITICAL FIX: These URLs redirect to HTML pages, NOT PDFs
+        # We need to follow redirects and check if final URL is a PDF
+        # Return the redirect URL to let the download logic handle it properly
+        return f"https://www.ncbi.nlm.nih.gov/pmc/articles/PMC{pmc_id}/pdf/"
 
 
 class RobustPDFFetcher:
@@ -474,10 +593,11 @@ class RobustPDFFetcher:
 
         # Initialize strategies (ordered by priority)
         self.strategies = [
-            PMCOAServiceStrategy(),
+            EuropePMCStrategy(),        # Highest success rate from testing
+            PMCOAServiceStrategy(),     # Fixed XML parsing - now enabled
+            DirectPMCStrategy(),        # Fixed URL patterns with redirect handling
             DOIRedirectStrategy(),
             ArxivStrategy(),
-            PubMedCentralFallbackStrategy(),
         ]
         self.strategies.sort(key=lambda s: s.priority)
 
@@ -539,21 +659,30 @@ class RobustPDFFetcher:
 
     async def _download_paper(self, session: aiohttp.ClientSession, paper: Paper) -> DownloadResult:
         """Download PDF for a single paper using available strategies"""
+        logger.info(f"🔍 Attempting PDF download for {paper.pmid} (PMC: {paper.pmcid}, DOI: {paper.doi})")
+
         for strategy in self.strategies:
             try:
-                if await strategy.can_handle(paper):
+                can_handle = await strategy.can_handle(paper)
+                logger.info(f"   {strategy.name} can_handle: {can_handle}")
+
+                if can_handle:
+                    pdf_url = await strategy.get_pdf_url(paper)
+                    logger.info(f"   {strategy.name} URL: {pdf_url}")
+
                     result = await strategy.download_pdf(session, paper, str(self.pdf_dir), self.rate_limiter)
 
                     if result.success:
-                        logger.debug(f"✅ Downloaded {paper.pmid} using {strategy.name}")
+                        logger.info(f"✅ Downloaded {paper.pmid} using {strategy.name}")
                         return result
                     else:
-                        logger.debug(f"❌ {strategy.name} failed for {paper.pmid}: {result.error_message}")
+                        logger.info(f"❌ {strategy.name} failed for {paper.pmid}: {result.error_message}")
 
             except Exception as e:
                 logger.error(f"Strategy {strategy.name} failed for {paper.pmid}: {e}")
 
         # All strategies failed
+        logger.warning(f"❌ All strategies failed for {paper.pmid}")
         return DownloadResult(
             pmid=paper.pmid,
             success=False,

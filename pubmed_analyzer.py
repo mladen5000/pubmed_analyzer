@@ -148,6 +148,15 @@ async def run_full_mode(args):
     pmcid_count = sum(1 for p in papers if p.pmcid)
     logger.info(f"✅ Found PMC IDs for {pmcid_count}/{len(papers)} papers")
 
+    # DEBUG: Show sample of papers and their data
+    logger.info("🔍 DEBUG: Sample paper data:")
+    for i, paper in enumerate(papers[:3]):
+        logger.info(f"   Paper {i+1}: PMID={paper.pmid}, PMC={paper.pmcid}, DOI={paper.doi}")
+        logger.info(f"           Title: {paper.title[:50] if paper.title else 'None'}...")
+
+    if pmcid_count == 0:
+        logger.warning("⚠️  No PMC IDs found - most strategies will be skipped!")
+
     # Step 4: Download PDFs
     logger.info("📚 Starting robust PDF downloads...")
     results = []

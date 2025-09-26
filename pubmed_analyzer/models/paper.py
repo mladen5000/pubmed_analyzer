@@ -52,9 +52,8 @@ class Paper:
             self.pmcid = f"PMC{self.pmcid}"
 
     def __repr__(self):
-        """Clean representation without verbose abstract text"""
-        title_short = (self.title[:50] + '...') if self.title and len(self.title) > 50 else self.title
-        return f"Paper(pmid='{self.pmid}', pmcid={self.pmcid}, title='{title_short}', has_abstract={bool(self.abstract)})"
+        """Clean representation without verbose fields"""
+        return f"Paper(pmid='{self.pmid}', pmcid={self.pmcid})"
 
     @property
     def clean_pmid(self) -> str:
