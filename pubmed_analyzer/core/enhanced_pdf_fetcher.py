@@ -14,6 +14,7 @@ from pathlib import Path
 
 from .robust_pdf_fetcher import PDFDownloadStrategy, DownloadResult, RobustPDFFetcher
 from ..models.paper import Paper
+from .advanced_pdf_strategies import SemanticScholarStrategy, COREStrategy, UnpaywallStrategy
 
 logger = logging.getLogger(__name__)
 
@@ -271,12 +272,17 @@ class EnhancedPDFFetcher(RobustPDFFetcher):
                 ArxivAPIStrategy(),
                 PaperscraperStrategy(),
                 PyPaperBotStrategy(),
+                # New advanced strategies for non-open access content
+                SemanticScholarStrategy(),
+                COREStrategy(),
+                UnpaywallStrategy(),
             ]
             self.strategies.extend(enhanced_strategies)
             self.strategies.sort(key=lambda s: s.priority)
 
             logger.info(f"Enhanced PDF fetcher initialized with {len(self.strategies)} strategies")
             logger.info("Third-party sources enabled: arXiv API, paperscraper, PyPaperBot")
+            logger.info("Advanced sources enabled: Semantic Scholar, CORE.ac.uk, Unpaywall")
         else:
             logger.info("Enhanced PDF fetcher initialized with only official sources")
 
@@ -291,7 +297,10 @@ class EnhancedPDFFetcher(RobustPDFFetcher):
             'arXiv': 'arXiv preprint server direct links',
             'arXiv API': 'Official arXiv Python API - most reliable for arXiv papers',
             'Paperscraper': 'Multi-source preprint server access (arXiv, bioRxiv, etc.)',
-            'PyPaperBot': 'Broad PDF access via multiple sources (educational use only)'
+            'PyPaperBot': 'Broad PDF access via multiple sources (educational use only)',
+            'Semantic Scholar API': 'Academic search engine with direct PDF access to millions of papers',
+            'CORE.ac.uk API': 'Global repository of 28M+ academic papers from institutional repositories',
+            'Unpaywall API': 'Legal open access discovery service for finding free versions of paywalled papers'
         }
 
         for strategy in self.strategies:
