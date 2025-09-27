@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 from pubmed_analyzer.models.paper import Paper
 from pubmed_analyzer.core.search import PubMedSearcher
 from pubmed_analyzer.core.id_converter import PMIDToPMCConverter
-from pubmed_analyzer.core.pdf_fetcher import UnifiedPDFFetcher
+from pubmed_analyzer.api.pdf_fetcher_api import PubMedPDFFetcher
 
 # Import enhanced analysis components
 try:
@@ -61,7 +61,13 @@ class ModularPubMedPipeline:
         # Only initialize PDF-related components if needed
         if not skip_pdf_download:
             self.id_converter = PMIDToPMCConverter(email, api_key)
-            self.pdf_fetcher = UnifiedPDFFetcher()
+            self.pdf_fetcher = PubMedPDFFetcher(
+                email=email,
+                api_key=api_key,
+                enhanced_mode=True,  # Enable third-party sources for higher success rates
+                batch_size=5,
+                min_success_rate=0.3
+            )
         else:
             self.id_converter = None
             self.pdf_fetcher = None
@@ -134,8 +140,9 @@ class ModularPubMedPipeline:
             )
 
             # Step 4: Download PDFs
-            logger.info("Step 4: Downloading PDFs using unified fetcher...")
-            await self.pdf_fetcher.download_all(papers)
+            logger.info("Step 4: Downloading PDFs using enhanced fetcher...")
+            pmids = [p.pmid for p in papers]
+            result = await self.pdf_fetcher.download_from_pmids(pmids)
         else:
             logger.info("Step 3-4: ⚡ PURE ABSTRACT MODE - No PMC conversion, no downloads needed!")
             logger.info("📄 Ready for immediate analysis with abstracts")

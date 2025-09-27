@@ -26,9 +26,9 @@ logger = logging.getLogger(__name__)
 from pubmed_analyzer import (
     Paper,
     PubMedSearcher,
-    PMIDToPMCConverter,
-    UnifiedPDFFetcher
+    PMIDToPMCConverter
 )
+from pubmed_analyzer.api.pdf_fetcher_api import PubMedPDFFetcher
 
 # Import new advanced modules
 from pubmed_analyzer.core.nlp_analyzer import AdvancedNLPAnalyzer
@@ -54,7 +54,13 @@ class EnhancedPubMedPipeline:
         # Initialize core components
         self.searcher = PubMedSearcher(email, api_key)
         self.id_converter = PMIDToPMCConverter(email, api_key)
-        self.pdf_fetcher = UnifiedPDFFetcher()
+        self.pdf_fetcher = PubMedPDFFetcher(
+            email=email,
+            api_key=api_key,
+            enhanced_mode=True,  # Enable third-party sources for higher success rates
+            batch_size=5,
+            min_success_rate=0.3
+        )
 
         # Initialize advanced analysis components
         self.nlp_analyzer = AdvancedNLPAnalyzer()
@@ -208,9 +214,10 @@ class EnhancedPubMedPipeline:
 
         # Download PDFs with enhanced error handling
         logger.info("📄 Downloading PDFs...")
-        await self.pdf_fetcher.download_all(papers)
+        pmids = [p.pmid for p in papers]
+        result = await self.pdf_fetcher.download_from_pmids(pmids)
 
-        successful_downloads = sum(1 for p in papers if p.download_success)
+        successful_downloads = result.successful_downloads
         logger.info(f"✅ Successfully downloaded {successful_downloads} PDFs")
 
         return papers
