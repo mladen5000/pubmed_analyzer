@@ -27,7 +27,7 @@ class ArxivAPIStrategy(PDFDownloadStrategy):
 
     @property
     def priority(self) -> int:
-        return 3
+        return 5
 
     async def can_handle(self, paper: Paper) -> bool:
         if paper.doi and 'arxiv' in paper.doi.lower():
@@ -95,7 +95,7 @@ class PaperscraperStrategy(PDFDownloadStrategy):
 
     @property
     def priority(self) -> int:
-        return 4
+        return 6
 
     async def can_handle(self, paper: Paper) -> bool:
         if not paper.title:
@@ -192,7 +192,7 @@ class PyPaperBotStrategy(PDFDownloadStrategy):
 
     @property
     def priority(self) -> int:
-        return 5
+        return 7
 
     async def can_handle(self, paper: Paper) -> bool:
         return bool(paper.title or paper.doi)

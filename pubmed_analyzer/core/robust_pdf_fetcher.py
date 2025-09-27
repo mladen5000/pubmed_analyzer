@@ -511,7 +511,7 @@ class DOIRedirectStrategy(PDFDownloadStrategy):
 
     @property
     def priority(self) -> int:
-        return 2
+        return 3
 
     async def can_handle(self, paper: Paper) -> bool:
         return paper.doi is not None
@@ -531,7 +531,7 @@ class ArxivStrategy(PDFDownloadStrategy):
 
     @property
     def priority(self) -> int:
-        return 3
+        return 4
 
     async def can_handle(self, paper: Paper) -> bool:
         # Check if DOI or title suggests arXiv
