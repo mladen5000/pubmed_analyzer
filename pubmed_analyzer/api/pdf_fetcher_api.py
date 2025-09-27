@@ -109,6 +109,39 @@ class PubMedPDFFetcher:
 
         return result
 
+    async def download_from_papers(self, papers: List[Paper]) -> BatchResult:
+        """
+        Download PDFs for a list of pre-enriched Paper objects
+
+        This method accepts Paper objects that already have PMC IDs and other metadata,
+        avoiding duplicate API calls and preserving enriched data.
+
+        Args:
+            papers: List of Paper objects (should already have PMC IDs if available)
+
+        Returns:
+            BatchResult with download statistics and individual results
+        """
+        if not papers:
+            return BatchResult(
+                total_papers=0,
+                successful_downloads=0,
+                failed_downloads=0,
+                success_rate=0.0,
+                total_time=0.0,
+                results=[]
+            )
+
+        logger.info(f"Starting PDF downloads for {len(papers)} pre-enriched papers...")
+
+        # Download PDFs directly using enriched papers
+        result = await self.pdf_fetcher.download_batch(papers)
+
+        logger.info(f"Download complete: {result.successful_downloads}/{result.total_papers} "
+                   f"({result.success_rate:.1%}) successful in {result.total_time:.1f}s")
+
+        return result
+
     async def download_from_search(self,
                                   query: str,
                                   max_results: int = 50,
@@ -205,6 +238,10 @@ class PubMedPDFFetcherSync:
     def download_from_pmids(self, pmids: List[str]) -> BatchResult:
         """Synchronous version of download_from_pmids"""
         return asyncio.run(self._fetcher.download_from_pmids(pmids))
+
+    def download_from_papers(self, papers: List[Paper]) -> BatchResult:
+        """Synchronous version of download_from_papers"""
+        return asyncio.run(self._fetcher.download_from_papers(papers))
 
     def download_from_search(self, query: str, **kwargs) -> BatchResult:
         """Synchronous version of download_from_search"""

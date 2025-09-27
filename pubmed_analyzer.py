@@ -159,34 +159,7 @@ async def run_full_mode(args):
 
     # Step 4: Download PDFs
     logger.info("📚 Starting robust PDF downloads...")
-    results = []
-    for paper in papers:
-        result = await pdf_fetcher.download_single(paper)
-        results.append(result)
-
-    # Create batch result structure
-    successful = sum(1 for r in results if r.success)
-
-    class MockBatchResult:
-        def __init__(self):
-            self.total_papers = len(papers)
-            self.successful_downloads = successful
-            self.failed_downloads = len(results) - successful
-            self.success_rate = successful / len(results) if results else 0.0
-            self.total_time = 0.0  # Will be calculated
-            self.results = results
-            self.strategies_used = {}
-
-        def calculate_strategies_used(self):
-            from collections import defaultdict
-            strategies = defaultdict(int)
-            for r in self.results:
-                if r.strategy_used:
-                    strategies[r.strategy_used] += 1
-            self.strategies_used = dict(strategies)
-
-    result = MockBatchResult()
-    result.calculate_strategies_used()
+    result = await pdf_fetcher.download_from_papers(papers)
 
     # Step 3: Generate visualizations (if enabled)
     if args.visualizations and VISUALIZER_AVAILABLE:

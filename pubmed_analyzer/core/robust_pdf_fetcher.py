@@ -306,8 +306,8 @@ class PDFDownloadStrategy(ABC):
                             f.write(content)
 
                         # Final validation
-                        validator = PDFValidator()
-                        validation_result = validator.validate_pdf(str(pdf_path))
+                        is_valid = PDFValidator.is_valid_pdf(str(pdf_path))
+                        validation_result = is_valid
 
                         download_time = time.time() - start_time
 
@@ -318,12 +318,11 @@ class PDFDownloadStrategy(ABC):
                             file_size=len(content),
                             attempt_count=attempt + 1,
                             download_time=download_time,
-                            validation_passed=validation_result.is_valid,
+                            validation_passed=validation_result,
                             metadata={
                                 'url': pdf_url,
                                 'response_status': response.status,
-                                'content_type': response.headers.get('content-type'),
-                                'validation_details': validation_result.details
+                                'content_type': response.headers.get('content-type')
                             }
                         )
 
