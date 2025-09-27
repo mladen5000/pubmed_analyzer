@@ -12,7 +12,7 @@ from pathlib import Path
 from ..models.paper import Paper
 from ..core.search import PubMedSearcher
 from ..core.robust_pdf_fetcher import RobustPDFFetcher, BatchResult, DownloadResult
-from ..core.enhanced_pdf_fetcher import EnhancedPDFFetcher
+from ..core.id_converter import PMIDToPMCConverter
 
 logger = logging.getLogger(__name__)
 
@@ -53,20 +53,16 @@ class PubMedPDFFetcher:
 
         # Initialize components
         self.searcher = PubMedSearcher(email, api_key)
+        self.id_converter = PMIDToPMCConverter(email, api_key)
 
-        if enhanced_mode:
-            self.pdf_fetcher = EnhancedPDFFetcher(
-                pdf_dir=pdf_dir,
-                min_success_rate=min_success_rate,
-                batch_size=batch_size,
-                enable_third_party=True
-            )
-        else:
-            self.pdf_fetcher = RobustPDFFetcher(
-                pdf_dir=pdf_dir,
-                min_success_rate=min_success_rate,
-                batch_size=batch_size
-            )
+        # Use unified PDF fetcher with enhanced mode option
+        self.pdf_fetcher = RobustPDFFetcher(
+            pdf_dir=pdf_dir,
+            min_success_rate=min_success_rate,
+            batch_size=batch_size,
+            enhanced_mode=enhanced_mode,
+            email=email
+        )
 
         logger.info(f"Initialized PubMedPDFFetcher with email: {email}")
         if api_key:
@@ -99,6 +95,12 @@ class PubMedPDFFetcher:
         # Fetch paper metadata
         logger.info(f"Fetching metadata for {len(pmids)} papers...")
         papers = await self.searcher.fetch_papers_metadata(pmids)
+
+        # Convert PMIDs to PMC IDs (crucial for PDF success)
+        logger.info(f"Converting PMIDs to PMC IDs...")
+        await self.id_converter.enrich_with_pmcids(papers)
+        pmc_count = sum(1 for p in papers if p.pmcid)
+        logger.info(f"Found PMC IDs for {pmc_count}/{len(papers)} papers")
 
         # Download PDFs
         logger.info(f"Starting PDF downloads for {len(papers)} papers...")

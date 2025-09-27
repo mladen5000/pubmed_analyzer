@@ -10,6 +10,9 @@ import aiohttp
 import os
 import time
 import logging
+import tempfile
+import subprocess
+import sys
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import List, Optional, Dict, Any, Tuple, AsyncIterator
@@ -84,26 +87,33 @@ class TokenBucket:
 class CircuitBreaker:
     """Circuit breaker to temporarily halt failing strategies"""
 
-    def __init__(self, failure_threshold: int = 10, timeout: float = 120):
-        self.failure_threshold = failure_threshold
-        self.timeout = timeout
+    def __init__(self, failure_threshold: int = 25, timeout: float = 300, strategy_name: str = "Unknown"):
+        self.failure_threshold = failure_threshold  # Increased from 10 to 25
+        self.timeout = timeout  # Increased from 120 to 300 seconds
+        self.strategy_name = strategy_name
         self.failure_count = 0
         self.last_failure_time = None
         self.state = 'closed'  # closed, open, half_open
+        self.consecutive_failures = 0  # Track consecutive failures vs total
 
     def record_success(self):
         """Record successful operation"""
-        self.failure_count = 0
+        # Reset consecutive failures but keep total count for statistics
+        self.consecutive_failures = 0
         self.state = 'closed'
 
     def record_failure(self):
-        """Record failed operation"""
+        """Record failed operation with smarter logic"""
         self.failure_count += 1
+        self.consecutive_failures += 1
         self.last_failure_time = time.time()
 
-        if self.failure_count >= self.failure_threshold:
+        # Only open circuit after consecutive failures, not total failures
+        if self.consecutive_failures >= self.failure_threshold:
             self.state = 'open'
-            logger.warning(f"Circuit breaker opened after {self.failure_count} failures")
+            logger.warning(f"Circuit breaker opened for {self.strategy_name} after {self.consecutive_failures} consecutive failures")
+        elif self.consecutive_failures >= 5:  # Warn at 5 consecutive failures
+            logger.info(f"Strategy {self.strategy_name} has {self.consecutive_failures} consecutive failures")
 
     def can_proceed(self) -> bool:
         """Check if operations can proceed"""
@@ -152,7 +162,7 @@ class PDFDownloadStrategy(ABC):
     """Abstract base class for PDF download strategies"""
 
     def __init__(self):
-        self.circuit_breaker = CircuitBreaker()
+        self.circuit_breaker = CircuitBreaker(strategy_name=self.__class__.__name__)
         self.success_count = 0
         self.failure_count = 0
 
@@ -253,35 +263,52 @@ class PDFDownloadStrategy(ABC):
             try:
                 start_time = time.time()
 
+                # IMPROVED: Better headers to avoid 403 errors
                 headers = {
-                    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-                    'Accept': 'application/pdf,*/*',
+                    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'Accept': 'application/pdf,text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
                     'Accept-Language': 'en-US,en;q=0.9',
                     'Accept-Encoding': 'gzip, deflate, br',
                     'Connection': 'keep-alive',
                     'Upgrade-Insecure-Requests': '1',
+                    'Sec-Fetch-Dest': 'document',
+                    'Sec-Fetch-Mode': 'navigate',
+                    'Sec-Fetch-Site': 'cross-site',
+                    'Cache-Control': 'max-age=0',
                 }
 
                 timeout = aiohttp.ClientTimeout(total=30)
                 async with session.get(pdf_url, headers=headers, timeout=timeout, allow_redirects=True) as response:
                     if response.status == 200:
-                        # CRITICAL FIX: Check final URL and content-type for PDF
+                        # IMPROVED: Check final URL and content-type for PDF with better logic
                         final_url = str(response.url).lower()
                         content_type = response.headers.get('content-type', '').lower()
 
-                        # Only proceed if we have a PDF URL or content-type
-                        if not (('.pdf' in final_url) or ('application/pdf' in content_type)):
-                            logger.debug(f"Final URL not PDF: {final_url}, content-type: {content_type}")
-                            if attempt < max_retries - 1:
-                                await asyncio.sleep(base_delay * (2 ** attempt))
-                                continue
-                            else:
-                                return DownloadResult(
-                                    pmid=paper.pmid,
-                                    success=False,
-                                    attempt_count=attempt + 1,
-                                    error_message=f"Redirected to non-PDF: {final_url}"
-                                )
+                        # More flexible PDF detection
+                        is_pdf_url = ('.pdf' in final_url) or ('pdf' in final_url and 'download' in final_url)
+                        is_pdf_content = ('application/pdf' in content_type) or ('pdf' in content_type)
+
+                        # Check content size (PDFs are typically large)
+                        content_length = response.headers.get('content-length')
+                        is_reasonable_size = not content_length or int(content_length) > 10000
+
+                        if not (is_pdf_url or is_pdf_content) and is_reasonable_size:
+                            # For publisher sites, check if we got redirected to paywall/login
+                            paywall_indicators = ['login', 'subscribe', 'paywall', 'access-denied', 'forbidden']
+                            if any(indicator in final_url for indicator in paywall_indicators):
+                                logger.debug(f"Redirected to paywall: {final_url}")
+                                if attempt < max_retries - 1:
+                                    await asyncio.sleep(base_delay * (2 ** attempt))
+                                    continue
+                                else:
+                                    return DownloadResult(
+                                        pmid=paper.pmid,
+                                        success=False,
+                                        attempt_count=attempt + 1,
+                                        error_message=f"Redirected to paywall: {final_url}"
+                                    )
+                            # For non-paywall redirects, still try to download if size is reasonable
+                            logger.debug(f"Non-PDF URL but proceeding: {final_url}, content-type: {content_type}")
 
                         content = await response.read()
 
@@ -570,10 +597,342 @@ class DirectPMCStrategy(PDFDownloadStrategy):
         # Clean PMC ID
         pmc_id = paper.pmcid.replace('PMC', '')
 
-        # CRITICAL FIX: These URLs redirect to HTML pages, NOT PDFs
-        # We need to follow redirects and check if final URL is a PDF
-        # Return the redirect URL to let the download logic handle it properly
+        # Try multiple PMC URL patterns for better success
         return f"https://www.ncbi.nlm.nih.gov/pmc/articles/PMC{pmc_id}/pdf/"
+
+
+class EnhancedDOIStrategy(PDFDownloadStrategy):
+    """Enhanced DOI strategy with publisher-specific handling"""
+
+    @property
+    def name(self) -> str:
+        return "Enhanced DOI"
+
+    @property
+    def priority(self) -> int:
+        return 3
+
+    async def can_handle(self, paper: Paper) -> bool:
+        return paper.doi is not None
+
+    async def get_pdf_url(self, paper: Paper) -> Optional[str]:
+        if not paper.doi:
+            return None
+
+        # Publisher-specific URL patterns for better success
+        doi_lower = paper.doi.lower()
+
+        if 'plos' in doi_lower:
+            # PLOS journals - direct PDF access
+            return f"https://journals.plos.org/plosone/article/file?id={paper.doi}&type=printable"
+        elif 'nature' in doi_lower:
+            # Nature journals - PDF access pattern
+            return f"https://www.nature.com/articles/{paper.doi.split('/')[-1]}.pdf"
+        elif 'cell' in doi_lower or 'science' in doi_lower:
+            # Try direct PDF access first
+            return f"https://doi.org/{paper.doi}"
+        else:
+            # Standard DOI resolution
+            return f"https://doi.org/{paper.doi}"
+
+
+class ArxivAPIStrategy(PDFDownloadStrategy):
+    """Official arXiv API strategy - highest reliability for arXiv papers"""
+
+    @property
+    def name(self) -> str:
+        return "arXiv API"
+
+    @property
+    def priority(self) -> int:
+        return 5
+
+    async def can_handle(self, paper: Paper) -> bool:
+        if paper.doi and 'arxiv' in paper.doi.lower():
+            return True
+        if paper.title and 'arxiv' in str(paper.title).lower():
+            return True
+        return False
+
+    async def get_pdf_url(self, paper: Paper) -> Optional[str]:
+        try:
+            import arxiv
+
+            if paper.doi and 'arxiv' in paper.doi.lower():
+                arxiv_id = paper.doi.split('arxiv.')[-1].split('/')[0]
+                return f"ARXIV_API:{arxiv_id}"
+            elif paper.title:
+                return f"ARXIV_SEARCH:{paper.title}"
+            return None
+        except ImportError:
+            return None
+
+    async def download_pdf(self, session, paper: Paper, pdf_dir: str, rate_limiter) -> DownloadResult:
+        try:
+            import arxiv
+
+            pdf_url = await self.get_pdf_url(paper)
+            if not pdf_url:
+                return DownloadResult(pmid=paper.pmid, success=False, strategy_used=self.name, error_message="No arXiv ID found")
+
+            if pdf_url.startswith("ARXIV_API:"):
+                arxiv_id = pdf_url.replace("ARXIV_API:", "")
+                search = arxiv.Search(id_list=[arxiv_id])
+                results = list(search.results())
+
+                if results:
+                    paper_obj = results[0]
+                    target_path = Path(pdf_dir) / f"{paper.pmid}.pdf"
+                    target_path.parent.mkdir(parents=True, exist_ok=True)
+
+                    paper_obj.download_pdf(dirpath=pdf_dir, filename=f"{paper.pmid}.pdf")
+
+                    if target_path.exists():
+                        self.circuit_breaker.record_success()
+                        self.success_count += 1
+                        return DownloadResult(
+                            pmid=paper.pmid, success=True, file_path=str(target_path),
+                            file_size=target_path.stat().st_size, strategy_used=self.name,
+                            metadata={'arxiv_id': arxiv_id}
+                        )
+
+            return DownloadResult(pmid=paper.pmid, success=False, strategy_used=self.name, error_message="arXiv download failed")
+
+        except Exception as e:
+            self.circuit_breaker.record_failure()
+            self.failure_count += 1
+            return DownloadResult(pmid=paper.pmid, success=False, strategy_used=self.name, error_message=str(e))
+
+
+class SemanticScholarStrategy(PDFDownloadStrategy):
+    """Semantic Scholar API - High success rate for academic papers with direct PDF access"""
+
+    def __init__(self):
+        super().__init__()
+        self.base_url = "https://api.semanticscholar.org/graph/v1/paper"
+        self.rate_limit_delay = 1.0  # 1 second between requests
+
+    @property
+    def name(self) -> str:
+        return "Semantic Scholar API"
+
+    @property
+    def priority(self) -> int:
+        return 8
+
+    async def can_handle(self, paper: Paper) -> bool:
+        return bool(paper.doi or paper.pmid or paper.title)
+
+    async def get_pdf_url(self, paper: Paper) -> Optional[str]:
+        try:
+            if paper.doi:
+                search_id = f"DOI:{paper.doi}"
+            elif paper.pmid:
+                pmid_clean = paper.pmid.replace("PMID:", "").strip()
+                search_id = f"PMID:{pmid_clean}"
+            else:
+                return None
+
+            await asyncio.sleep(self.rate_limit_delay)
+            return f"SEMANTIC_SCHOLAR:{search_id}"
+
+        except Exception as e:
+            logger.debug(f"Semantic Scholar URL generation failed: {e}")
+            return None
+
+    async def download_pdf(self, session: aiohttp.ClientSession, paper: Paper, pdf_dir: str, rate_limiter) -> DownloadResult:
+        try:
+            pdf_url = await self.get_pdf_url(paper)
+            if not pdf_url:
+                return DownloadResult(pmid=paper.pmid, success=False, strategy_used=self.name, error_message="No valid search identifier")
+
+            search_id = pdf_url.replace("SEMANTIC_SCHOLAR:", "")
+            api_url = f"{self.base_url}/{search_id}"
+            params = {"fields": "title,openAccessPdf,url,isOpenAccess,publicationTypes"}
+            headers = {
+                "User-Agent": "Academic Research Tool (educational use)",
+                "Accept": "application/json"
+            }
+
+            async with session.get(api_url, params=params, headers=headers) as response:
+                if response.status == 200:
+                    data = await response.json()
+
+                    if data.get("openAccessPdf") and data["openAccessPdf"].get("url"):
+                        pdf_download_url = data["openAccessPdf"]["url"]
+
+                        async with session.get(pdf_download_url, headers=headers) as pdf_response:
+                            if pdf_response.status == 200:
+                                content = await pdf_response.read()
+                                pdf_path = Path(pdf_dir) / f"{paper.pmid}.pdf"
+                                pdf_path.parent.mkdir(parents=True, exist_ok=True)
+
+                                with open(pdf_path, 'wb') as f:
+                                    f.write(content)
+
+                                if PDFValidator.is_valid_pdf(str(pdf_path)):
+                                    self.circuit_breaker.record_success()
+                                    self.success_count += 1
+                                    return DownloadResult(
+                                        pmid=paper.pmid, success=True, file_path=str(pdf_path),
+                                        file_size=len(content), strategy_used=self.name,
+                                        metadata={'semantic_scholar_id': data.get('paperId')}
+                                    )
+                                else:
+                                    PDFValidator.cleanup_invalid_pdf(str(pdf_path))
+
+            return DownloadResult(pmid=paper.pmid, success=False, strategy_used=self.name, error_message="No open access PDF available")
+
+        except Exception as e:
+            self.circuit_breaker.record_failure()
+            self.failure_count += 1
+            return DownloadResult(pmid=paper.pmid, success=False, strategy_used=self.name, error_message=f"Semantic Scholar error: {str(e)}")
+
+
+class UnpaywallStrategy(PDFDownloadStrategy):
+    """Unpaywall API - Legal open access discovery service"""
+
+    def __init__(self, email: str = "research@academic.edu"):
+        super().__init__()
+        self.base_url = "https://api.unpaywall.org/v2"
+        self.rate_limit_delay = 1.0
+        self.email = email
+
+    @property
+    def name(self) -> str:
+        return "Unpaywall API"
+
+    @property
+    def priority(self) -> int:
+        return 10
+
+    async def can_handle(self, paper: Paper) -> bool:
+        return bool(paper.doi)
+
+    async def get_pdf_url(self, paper: Paper) -> Optional[str]:
+        return f"UNPAYWALL:{paper.doi}" if paper.doi else None
+
+    async def download_pdf(self, session: aiohttp.ClientSession, paper: Paper, pdf_dir: str, rate_limiter) -> DownloadResult:
+        try:
+            if not paper.doi:
+                return DownloadResult(pmid=paper.pmid, success=False, strategy_used=self.name, error_message="No DOI available")
+
+            await asyncio.sleep(self.rate_limit_delay)
+
+            api_url = f"{self.base_url}/{paper.doi}"
+            params = {"email": self.email}
+            headers = {
+                "User-Agent": "Academic Research Tool (educational use)",
+                "Accept": "application/json"
+            }
+
+            async with session.get(api_url, params=params, headers=headers) as response:
+                if response.status == 200:
+                    data = await response.json()
+
+                    if data.get("is_oa") and data.get("best_oa_location"):
+                        oa_location = data["best_oa_location"]
+                        pdf_url = oa_location.get("url_for_pdf")
+
+                        if pdf_url:
+                            async with session.get(pdf_url, headers=headers) as pdf_response:
+                                if pdf_response.status == 200:
+                                    content = await pdf_response.read()
+                                    pdf_path = Path(pdf_dir) / f"{paper.pmid}.pdf"
+                                    pdf_path.parent.mkdir(parents=True, exist_ok=True)
+
+                                    with open(pdf_path, 'wb') as f:
+                                        f.write(content)
+
+                                    if PDFValidator.is_valid_pdf(str(pdf_path)):
+                                        self.circuit_breaker.record_success()
+                                        self.success_count += 1
+                                        return DownloadResult(
+                                            pmid=paper.pmid, success=True, file_path=str(pdf_path),
+                                            file_size=len(content), strategy_used=self.name,
+                                            metadata={'oa_date': data.get('oa_date')}
+                                        )
+                                    else:
+                                        PDFValidator.cleanup_invalid_pdf(str(pdf_path))
+
+            return DownloadResult(pmid=paper.pmid, success=False, strategy_used=self.name, error_message="No open access PDF available via Unpaywall")
+
+        except Exception as e:
+            self.circuit_breaker.record_failure()
+            self.failure_count += 1
+            return DownloadResult(pmid=paper.pmid, success=False, strategy_used=self.name, error_message=f"Unpaywall error: {str(e)}")
+
+
+class PyPaperBotStrategy(PDFDownloadStrategy):
+    """PyPaperBot for broader PDF access (educational use only)"""
+
+    @property
+    def name(self) -> str:
+        return "PyPaperBot"
+
+    @property
+    def priority(self) -> int:
+        return 7
+
+    async def can_handle(self, paper: Paper) -> bool:
+        return bool(paper.title or paper.doi)
+
+    async def get_pdf_url(self, paper: Paper) -> Optional[str]:
+        if paper.doi:
+            return f"PYPAPERBOT_DOI:{paper.doi}"
+        elif paper.title:
+            return f"PYPAPERBOT_TITLE:{paper.title}"
+        return None
+
+    async def download_pdf(self, session, paper: Paper, pdf_dir: str, rate_limiter) -> DownloadResult:
+        try:
+            pdf_url = await self.get_pdf_url(paper)
+            if not pdf_url:
+                return DownloadResult(pmid=paper.pmid, success=False, strategy_used=self.name, error_message="No search terms")
+
+            with tempfile.TemporaryDirectory() as temp_dir:
+                try:
+                    if pdf_url.startswith("PYPAPERBOT_DOI:"):
+                        doi = pdf_url.replace("PYPAPERBOT_DOI:", "")
+                        doi_file = Path(temp_dir) / "dois.txt"
+                        with open(doi_file, 'w') as f:
+                            f.write(doi + '\n')
+                        cmd = [sys.executable, "-m", "PyPaperBot", "--doi-file", str(doi_file), "--dwn-dir", temp_dir, "--num-limit", "1", "--scholar-pages", "2"]
+                    elif pdf_url.startswith("PYPAPERBOT_TITLE:"):
+                        title = pdf_url.replace("PYPAPERBOT_TITLE:", "")
+                        cmd = [sys.executable, "-m", "PyPaperBot", "--query", title, "--dwn-dir", temp_dir, "--num-limit", "1", "--scholar-pages", "2", "--scholar-results", "5"]
+                    else:
+                        return DownloadResult(pmid=paper.pmid, success=False, strategy_used=self.name, error_message="Invalid URL format")
+
+                    result = subprocess.run(cmd, capture_output=True, text=True, timeout=120, env={**os.environ, 'PYTHONPATH': os.environ.get('PYTHONPATH', '')})
+
+                    pdf_files = list(Path(temp_dir).glob("**/*.pdf"))
+                    if pdf_files:
+                        largest_pdf = max(pdf_files, key=lambda p: p.stat().st_size)
+                        if largest_pdf.stat().st_size > 50000:
+                            target_path = Path(pdf_dir) / f"{paper.pmid}.pdf"
+                            target_path.parent.mkdir(parents=True, exist_ok=True)
+
+                            import shutil
+                            shutil.move(str(largest_pdf), target_path)
+
+                            self.circuit_breaker.record_success()
+                            self.success_count += 1
+                            return DownloadResult(
+                                pmid=paper.pmid, success=True, file_path=str(target_path),
+                                file_size=target_path.stat().st_size, strategy_used=self.name,
+                                metadata={'source': 'PyPaperBot'}
+                            )
+
+                    return DownloadResult(pmid=paper.pmid, success=False, strategy_used=self.name, error_message="No PDF downloaded")
+
+                except subprocess.TimeoutExpired:
+                    return DownloadResult(pmid=paper.pmid, success=False, strategy_used=self.name, error_message="PyPaperBot timeout after 120s")
+
+        except Exception as e:
+            self.circuit_breaker.record_failure()
+            self.failure_count += 1
+            return DownloadResult(pmid=paper.pmid, success=False, strategy_used=self.name, error_message=f"PyPaperBot error: {str(e)}")
 
 
 class RobustPDFFetcher:
@@ -582,22 +941,41 @@ class RobustPDFFetcher:
     def __init__(self, pdf_dir: str = "pdfs",
                  min_success_rate: float = 0.3,
                  batch_size: int = 5,
-                 inter_batch_delay: float = 2.0):
+                 inter_batch_delay: float = 2.0,
+                 enhanced_mode: bool = True,
+                 email: str = "research@academic.edu"):
         self.pdf_dir = Path(pdf_dir)
         self.pdf_dir.mkdir(exist_ok=True)
 
         self.min_success_rate = min_success_rate
         self.batch_size = batch_size
         self.inter_batch_delay = inter_batch_delay
+        self.enhanced_mode = enhanced_mode
+        self.email = email
 
-        # Initialize strategies (ordered by priority)
+        # Initialize core strategies (ordered by priority)
         self.strategies = [
             EuropePMCStrategy(),        # Highest success rate from testing
             PMCOAServiceStrategy(),     # Fixed XML parsing - now enabled
             DirectPMCStrategy(),        # Fixed URL patterns with redirect handling
-            DOIRedirectStrategy(),
-            ArxivStrategy(),
+            EnhancedDOIStrategy(),      # Publisher-specific DOI handling
+            DOIRedirectStrategy(),      # Keep as fallback
+            ArxivStrategy(),            # Basic arXiv support
         ]
+
+        # Add enhanced strategies if enabled
+        if enhanced_mode:
+            enhanced_strategies = [
+                ArxivAPIStrategy(),             # Official arXiv API
+                PyPaperBotStrategy(),           # Educational use only
+                SemanticScholarStrategy(),      # Academic search engine
+                UnpaywallStrategy(email),       # Legal open access discovery
+            ]
+            self.strategies.extend(enhanced_strategies)
+            logger.info("Enhanced mode enabled: arXiv API, PyPaperBot, Semantic Scholar, Unpaywall")
+        else:
+            logger.info("Standard mode: official sources only")
+
         self.strategies.sort(key=lambda s: s.priority)
 
         # Rate limiting and monitoring
@@ -655,6 +1033,22 @@ class RobustPDFFetcher:
             results=results,
             strategies_used=dict(strategies_used)
         )
+
+    async def stream_download_batch(self, papers: List[Paper]) -> AsyncIterator[DownloadResult]:
+        """Stream PDF downloads for real-time results"""
+        async with aiohttp.ClientSession() as session:
+            semaphore = asyncio.Semaphore(3)  # Limit concurrent downloads
+
+            async def download_with_semaphore(paper: Paper) -> DownloadResult:
+                async with semaphore:
+                    return await self._download_paper(session, paper)
+
+            # Process all papers concurrently but yield results as they complete
+            tasks = [asyncio.create_task(download_with_semaphore(paper)) for paper in papers]
+
+            for coro in asyncio.as_completed(tasks):
+                result = await coro
+                yield result
 
     async def _download_paper(self, session: aiohttp.ClientSession, paper: Paper) -> DownloadResult:
         """Download PDF for a single paper using available strategies"""

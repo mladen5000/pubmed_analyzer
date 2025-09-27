@@ -100,6 +100,98 @@ async def run_abstracts_mode(args):
         logger.info(f"   📊 Visualizations: {len(visualization_files)} files")
 
 
+async def run_streaming_full_mode(args):
+    """
+    STREAMING FULL MODE: Start downloading PDFs as soon as papers are processed
+    - Pipeline processing: PMID → Metadata → PMC ID → PDF Download
+    - Faster time-to-first-PDF
+    - Progressive results
+    - Better resource utilization
+    """
+    logger.info("🚀 STREAMING FULL MODE: Pipeline processing for faster results")
+    logger.info("💡 PDFs will start downloading immediately as papers are processed")
+    start_time = datetime.now()
+
+    # Initialize searcher and converter
+    searcher = PubMedSearcher(args.email, args.api_key)
+    converter = PMIDToPMCConverter(args.email, args.api_key)
+
+    # Initialize PDF fetcher with streaming capability
+    pdf_fetcher = PubMedPDFFetcher(
+        email=args.email,
+        api_key=args.api_key,
+        pdf_dir=args.pdf_dir or "pdfs",
+        enhanced_mode=not args.no_enhanced
+    )
+
+    logger.info(f"🔍 Starting streaming search: '{args.query}'")
+
+    # Step 1: Search for PMIDs
+    pmids = await searcher.search_papers(
+        query=args.query,
+        max_results=args.max_papers,
+        start_date=args.start_date,
+        end_date=args.end_date
+    )
+
+    if not pmids:
+        logger.error("No papers found for the query")
+        return
+
+    # Step 2: Fetch metadata
+    logger.info(f"📄 Fetching metadata for {len(pmids)} papers...")
+    papers = await searcher.fetch_papers_metadata(pmids)
+
+    # Step 3: Convert PMC IDs
+    logger.info("🔗 Converting PMIDs to PMC IDs...")
+    await converter.enrich_with_pmcids(papers)
+
+    # Step 4: Stream download PDFs
+    logger.info("📚 Starting streaming PDF downloads...")
+    results = []
+    async for result in pdf_fetcher.pdf_fetcher.stream_download_batch(papers):
+        results.append(result)
+
+        # Show real-time progress for successful downloads
+        if result.success:
+            logger.info(f"✅ Downloaded {result.pmid} using {result.strategy_used}")
+
+        # Show progress every 5 papers
+        if len(results) % 5 == 0:
+            successful = sum(1 for r in results if r.success)
+            logger.info(f"📋 Progress: {successful}/{len(results)} PDFs downloaded ({successful/len(results)*100:.1f}% success)")
+
+    # Final summary
+    elapsed = datetime.now() - start_time
+    successful = sum(1 for r in results if r.success)
+
+    # Collect strategy usage stats
+    strategies_used = {}
+    for result in results:
+        if result.strategy_used:
+            strategies_used[result.strategy_used] = strategies_used.get(result.strategy_used, 0) + 1
+
+    logger.info(f"🎉 STREAMING FULL MODE complete in {elapsed.total_seconds():.1f} seconds!")
+    logger.info(f"   📚 Papers processed: {len(results)}")
+    logger.info(f"   📄 PDFs downloaded: {successful}")
+    logger.info(f"   📈 Success rate: {successful/len(results)*100:.1f}%")
+
+    # Strategy breakdown
+    if strategies_used:
+        logger.info("   🔧 Strategies used:")
+        for strategy, count in strategies_used.items():
+            logger.info(f"      {strategy}: {count} downloads")
+
+    # Show failed downloads
+    failed_results = [r for r in results if not r.success]
+    if failed_results:
+        logger.info(f"   ❌ Failed downloads: {len(failed_results)}")
+        for i, failed in enumerate(failed_results[:3]):
+            logger.info(f"      {failed.pmid}: {failed.error_message}")
+        if len(failed_results) > 3:
+            logger.info(f"      ... and {len(failed_results) - 3} more")
+
+
 async def run_full_mode(args):
     """
     FULL MODE: Comprehensive analysis with robust PDF downloading
@@ -108,6 +200,9 @@ async def run_full_mode(args):
     - Batch processing with success monitoring
     - Comprehensive analysis with full-text when available
     """
+    if args.streaming:
+        return await run_streaming_full_mode(args)
+
     logger.info("📚 FULL MODE: Comprehensive analysis with PDF downloading")
     logger.info("💡 Note: Most PubMed papers don't have freely accessible PDFs (expect 20-40% success rate)")
     start_time = datetime.now()
@@ -263,6 +358,14 @@ Examples:
     )
     full_parser.add_argument(
         '--end-date', help='End date filter (YYYY/MM/DD)'
+    )
+    full_parser.add_argument(
+        '--streaming', '-s', action='store_true',
+        help='Use streaming mode for faster time-to-first-PDF (experimental)'
+    )
+    full_parser.add_argument(
+        '--no-enhanced', action='store_true',
+        help='Disable enhanced PDF strategies (official sources only)'
     )
 
     # Common arguments
