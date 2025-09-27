@@ -8,32 +8,19 @@ This is a **PubMed Analyzer** - a modular scientific literature analysis pipelin
 
 ## Core Architecture & Entry Points
 
-The project maintains **multiple specialized entry points** to serve different user needs and complexity levels:
+The project has been streamlined with a **single unified entry point** that provides multiple modes:
 
-### 1. Main CLI Interface (`pubmed_analyzer.py`) - **RECOMMENDED FOR MOST USERS**
-**Primary entry point** with two optimized modes:
+### Main CLI Interface (`pubmed_analyzer.py`) - **UNIFIED ENTRY POINT**
+**Single entry point** with two optimized modes:
 - **ABSTRACTS MODE**: Ultra-fast abstract-only analysis (recommended for exploration)
-- **FULL MODE**: Comprehensive analysis with robust PDF downloading
-- **Best for**: Quick analysis, exploration, general users
+- **FULL MODE**: Comprehensive analysis with robust PDF downloading using enhanced fetcher
+- **Best for**: All users - from quick exploration to comprehensive research
 
-### 2. Enhanced Pipeline (`enhanced_main.py`) - **FOR ADVANCED RESEARCH**
-Advanced NLP/ML analysis with enhanced RAG capabilities, topic modeling, and comprehensive visualizations.
-- **Best for**: Researchers, comprehensive analysis, ML/NLP features
-- **Requirements**: Additional dependencies, API keys for LLM features
-
-### 3. Modular Pipeline (`main_new.py`) - **FOR DEVELOPERS**
-Original modular pipeline with full control over components.
-- **Best for**: Development, customization, fine-grained control
-- **Status**: Maintained for backward compatibility
-
-### 4. Legacy Utilities
-- `fetch_pubmed.py`: Simple fetching utilities (legacy)
-
-**Entry Point Selection Guide:**
-- **New users**: Start with `pubmed_analyzer.py abstracts`
-- **Researchers**: Use `enhanced_main.py` for advanced analysis
-- **Developers**: Use `main_new.py` for customization
-- **Simple fetching**: Use `fetch_pubmed.py` (basic use cases)
+**Key Benefits of Unified Architecture:**
+- **Simplified Usage**: Single command interface for all functionality
+- **Consistent PDF Success**: All modes use the enhanced PDF fetcher (60-80% success rates)
+- **Reduced Complexity**: No need to choose between multiple entry points
+- **Maintained Features**: All advanced features available through command-line options
 
 ## Core Features
 
@@ -96,7 +83,7 @@ NCBI requires a valid email address for API access.
 
 ### 3. Installation and Run Commands
 
-#### Main CLI Interface (Recommended)
+#### Unified CLI Interface
 ```bash
 # Install dependencies
 uv sync
@@ -104,8 +91,11 @@ uv sync
 # ABSTRACTS MODE: Ultra-fast analysis (recommended for exploration)
 uv run python pubmed_analyzer.py abstracts --query "machine learning" --max-papers 100 --visualizations
 
-# FULL MODE: Comprehensive analysis with PDF downloads
+# FULL MODE: Comprehensive analysis with enhanced PDF downloads (60-80% success rates)
 uv run python pubmed_analyzer.py full --query "COVID-19" --max-papers 50 --pdf-dir covid_pdfs
+
+# FULL MODE with advanced options
+uv run python pubmed_analyzer.py full --query "CRISPR gene editing" --max-papers 50 --enhanced --email "your@email.com"
 
 # Get help
 uv run python pubmed_analyzer.py --help
@@ -113,36 +103,19 @@ uv run python pubmed_analyzer.py abstracts --help
 uv run python pubmed_analyzer.py full --help
 ```
 
-#### Enhanced Pipeline (Advanced Features)
-```bash
-# Run enhanced analysis with advanced NLP/ML
-uv run python enhanced_main.py --query "CRISPR gene editing" --max-papers 50
-```
-
-#### Legacy Interface
-```bash
-# Original modular pipeline (still functional)
-uv run python main_new.py --query "your search terms" --max-papers 50
-```
-
 ### 4. Enhanced PDF Download System
 
 The system features a **multi-source PDF fetching architecture** with significant success rate improvements:
 
 #### **Enhanced Mode (Default - Recommended)**
-- **Success Rate**: 85-100% (5x improvement over standard, up from 60-80%)
-- **11-Tier Advanced Strategy System**:
-  - **Tier 0**: EuropePMC (highest success rate for PMC papers)
-  - **Tier 1**: PMC OA Service (official NCBI service)
-  - **Tier 2**: Direct PMC (direct PMC access)
-  - **Tier 3**: DOI Redirect (publisher access)
-  - **Tier 4**: arXiv (preprint direct access)
-  - **Tier 5**: arXiv API (official API for arXiv papers)
-  - **Tier 6**: paperscraper (arXiv, bioRxiv, medRxiv preprints)
-  - **Tier 7**: PyPaperBot (broader access - educational use only)
-  - **Tier 8**: **NEW** Semantic Scholar API (millions of academic papers)
-  - **Tier 9**: **NEW** CORE.ac.uk API (28M+ institutional repository papers)
-  - **Tier 10**: **NEW** Unpaywall API (legal open access discovery)
+- **Success Rate**: 60-80% (3x improvement over standard)
+- **Multi-Source Strategy System**:
+  - **Primary**: PMC OA Service (official NCBI service)
+  - **Secondary**: Direct PMC access
+  - **Tertiary**: DOI-based publisher access
+  - **Advanced**: arXiv API for preprints
+  - **Extended**: paperscraper for bioRxiv/medRxiv
+  - **Research**: PyPaperBot for broader academic access (educational use)
 
 #### **Standard Mode (Official Sources Only)**
 - **Success Rate**: 20-40% (PMC Open Access only)
@@ -151,46 +124,46 @@ The system features a **multi-source PDF fetching architecture** with significan
 
 #### **Usage Examples:**
 ```bash
-# Enhanced mode (default) - 85-100% success rates with advanced strategies
-uv run python pubmed_analyzer.py full --query "COVID-19" --max-papers 50
+# Enhanced mode (default) - 60-80% success rates with multi-source strategies
+uv run python pubmed_analyzer.py full --query "COVID-19" --max-papers 50 --email "your@email.com"
 
 # Standard mode - official sources only (20-40% success rates)
-uv run python pubmed_analyzer.py full --query "COVID-19" --max-papers 50 --no-enhanced
+uv run python pubmed_analyzer.py full --query "COVID-19" --max-papers 50 --no-enhanced --email "your@email.com"
 
-# Enhanced pipeline with all advanced strategies
-uv run python enhanced_main.py --query "CRISPR gene editing" --max-papers 50
+# Abstracts mode - instant analysis without PDFs
+uv run python pubmed_analyzer.py abstracts --query "CRISPR gene editing" --max-papers 100 --visualizations
 ```
 
 #### **Technical Features:**
 - **Circuit breakers**: Temporarily disable failing sources
-- **Rate limiting**: Respects API limits for all sources (1s Semantic Scholar, 500ms CORE)
-- **Smart fallbacks**: Tries up to 11 different sources per paper
-- **Advanced APIs**: Semantic Scholar, CORE.ac.uk, Unpaywall for non-open access content
-- **Validation**: Checks PDF content and headers
-- **Exponential backoff**: Progressive retry delays
+- **Rate limiting**: Respects API limits and publisher terms of service
+- **Smart fallbacks**: Tries multiple sources per paper with priority ordering
+- **Third-party APIs**: arXiv, paperscraper, PyPaperBot for broader access
+- **Validation**: Checks PDF content and headers for quality assurance
+- **Exponential backoff**: Progressive retry delays for failed requests
 - **Legal compliance**: All strategies respect terms of service and fair use
 
 #### **Legal Considerations:**
-- **Fully Legal**: arXiv API, Semantic Scholar API, CORE.ac.uk API, Unpaywall API (official APIs)
-- **Educational Use**: PyPaperBot (marked for educational purposes)
+- **Fully Legal**: arXiv API and paperscraper (official APIs for preprint repositories)
+- **Educational Use**: PyPaperBot (marked for educational and research purposes)
 - **Publisher Compliance**: Respects robots.txt and rate limits for all sources
-- **Research Focused**: All advanced strategies designed for academic and research use
-- **Configurable**: Can disable specific sources if needed
+- **Research Focused**: All strategies designed for academic and research use
+- **Configurable**: Can disable enhanced mode with --no-enhanced flag
 
 #### **Known Limitations:**
-- **PMC Coverage**: Only ~30% of papers have PMC IDs (now supplemented by institutional repositories)
-- **Access Restrictions**: Some recent papers still require subscriptions (greatly reduced by advanced APIs)
-- **Regional Blocks**: Some publishers block automated access (mitigated by multiple sources)
+- **PMC Coverage**: Only ~30% of papers have PMC IDs (supplemented by preprint repositories)
+- **Access Restrictions**: Some recent papers still require subscriptions
+- **Regional Blocks**: Some publishers may block automated access
 - **Very Recent Papers**: Newest papers may not yet be in open repositories
 
 #### **Troubleshooting:**
 - Use ABSTRACTS mode for instant analysis without PDFs
 - Enhanced mode automatically enabled - disable with `--no-enhanced`
-- Check strategy performance in logs for optimization
-- Advanced APIs (Semantic Scholar, CORE, Unpaywall) now handle most non-open access cases
-- 11-strategy system provides multiple fallbacks for maximum success rates
+- Check logs for PDF download success rates and strategy performance
+- Use arXiv and bioRxiv for preprint access when journal articles unavailable
+- Multi-source system provides fallbacks for improved success rates
 
-The enhanced system maintains full backward compatibility while achieving world-class PDF acquisition success rates of 85-100% through legal, ethical access to academic content.
+The enhanced system maintains full backward compatibility while achieving significantly improved PDF acquisition success rates (60-80%) through legal, ethical access to academic content.
 
 ## Key Dependencies
 

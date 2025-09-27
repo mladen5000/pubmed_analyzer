@@ -33,6 +33,88 @@ except ImportError:
     logger.warning("Visualizer not available")
     VISUALIZER_AVAILABLE = False
 
+try:
+    from pubmed_analyzer.core.section_aware_rag import SectionAwareRAGAnalyzer
+    SECTION_AWARE_AVAILABLE = True
+except ImportError:
+    logger.warning("Section-aware RAG not available")
+    SECTION_AWARE_AVAILABLE = False
+
+
+async def run_section_aware_analysis(papers, query, mode):
+    """Run section-aware RAG analysis on papers"""
+    if not SECTION_AWARE_AVAILABLE:
+        logger.warning("Section-aware RAG not available")
+        return
+
+    try:
+        # Convert papers to format expected by section-aware analyzer
+        papers_data = []
+        for paper in papers:
+            paper_data = {
+                'pmid': paper.pmid,
+                'title': paper.title,
+                'authors': paper.authors,
+                'abstract': paper.abstract,
+                'processing_mode': mode
+            }
+
+            # Add full-text sections if available (full mode)
+            if hasattr(paper, 'sections') and paper.sections:
+                paper_data['sections'] = paper.sections
+            elif hasattr(paper, 'full_text') and paper.full_text:
+                paper_data['full_text'] = paper.full_text
+
+            papers_data.append(paper_data)
+
+        # Initialize section-aware analyzer
+        analyzer = SectionAwareRAGAnalyzer(storage_path="./section_aware_rag")
+
+        # Process papers with section awareness
+        logger.info(f"📊 Processing {len(papers_data)} papers for section analysis...")
+        results = analyzer.process_papers_with_sections(papers_data)
+
+        logger.info(f"✅ Section-aware processing complete:")
+        logger.info(f"   📄 Papers processed: {results['processed_papers']}")
+        logger.info(f"   🔍 Total sections: {results['total_sections']}")
+        logger.info(f"   📊 Avg sections/paper: {results['avg_sections_per_paper']:.1f}")
+
+        # Run example queries to demonstrate capabilities
+        logger.info("🎯 Running example section-aware queries...")
+
+        example_queries = [
+            ("What methodologies are commonly used?", "METHODOLOGICAL"),
+            ("What are the key findings?", "EMPIRICAL"),
+            ("What are the main concepts discussed?", "CONCEPTUAL")
+        ]
+
+        for query_text, query_type in example_queries:
+            logger.info(f"❓ Query: {query_text}")
+
+            # Import the QueryType enum
+            from pubmed_analyzer.core.section_aware_rag import QueryType
+
+            query_result = analyzer.section_aware_query(
+                query=f"{query_text} related to {query}",
+                query_type=QueryType[query_type],
+                limit=5
+            )
+
+            if 'response' in query_result and 'answer' in query_result['response']:
+                answer = query_result['response']['answer']
+                logger.info(f"💡 Answer: {answer[:200]}...")
+
+            logger.info(f"   📚 Results found: {len(query_result.get('contexts', []))}")
+
+        # Get system statistics
+        stats = analyzer.get_section_statistics()
+        logger.info("📈 Section-aware RAG statistics:")
+        for collection, count in stats.get('collections', {}).items():
+            logger.info(f"   {collection}: {count} documents")
+
+    except Exception as e:
+        logger.error(f"❌ Section-aware analysis failed: {e}")
+
 
 async def run_abstracts_mode(args):
     """
@@ -98,6 +180,11 @@ async def run_abstracts_mode(args):
     logger.info(f"   📄 Abstract coverage: {with_abstracts/len(papers)*100:.1f}%")
     if args.visualizations and VISUALIZER_AVAILABLE:
         logger.info(f"   📊 Visualizations: {len(visualization_files)} files")
+
+    # Step 4: Section-aware RAG analysis (if enabled)
+    if args.section_aware and SECTION_AWARE_AVAILABLE:
+        logger.info("🧠 Running section-aware RAG analysis...")
+        await run_section_aware_analysis(papers, args.query, "abstracts")
 
 
 async def run_streaming_full_mode(args):
@@ -328,6 +415,10 @@ Examples:
         help='Generate visualizations from abstracts'
     )
     abstracts_parser.add_argument(
+        '--section-aware', action='store_true',
+        help='Enable section-aware RAG analysis (experimental)'
+    )
+    abstracts_parser.add_argument(
         '--start-date', help='Start date filter (YYYY/MM/DD)'
     )
     abstracts_parser.add_argument(
@@ -352,6 +443,10 @@ Examples:
     full_parser.add_argument(
         '--visualizations', '-v', action='store_true',
         help='Generate comprehensive visualizations'
+    )
+    full_parser.add_argument(
+        '--section-aware', action='store_true',
+        help='Enable section-aware RAG analysis with PDF sections'
     )
     full_parser.add_argument(
         '--start-date', help='Start date filter (YYYY/MM/DD)'
