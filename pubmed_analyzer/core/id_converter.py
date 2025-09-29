@@ -135,11 +135,8 @@ class PMIDToPMCConverter:
                             # Convert PMID to string for consistent key matching
                             pmid_str = str(pmid)
 
-                            # Clean up PMC ID format
-                            if pmcid.startswith('PMC'):
-                                pmid_to_pmcid[pmid_str] = pmcid
-                            else:
-                                pmid_to_pmcid[pmid_str] = f'PMC{pmcid}'
+                            # NCBI API already returns PMC prefix, just use as-is
+                            pmid_to_pmcid[pmid_str] = pmcid
 
                 logger.debug(f"Bulk converted {len(pmid_to_pmcid)}/{len(pmids)} PMIDs to PMC IDs")
                 return pmid_to_pmcid
